@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx server/data/migrate.ts",
+    "db:seed": "tsx server/data/seed.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

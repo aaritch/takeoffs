@@ -10,10 +10,10 @@ This is the living state of the build. It is the single place a developer (or co
 ## 1. Current focus
 
 - **Active phase:** Phase 0 — Foundations
-- **Active task:** P0-10 — Seed trade structure & starter conditions (GATE; local-buildable; needs domain-estimator sign-off on units)
-- **Next up:** P0-05 / P0-04-hosted / P0-08 once cloud creds exist (auth provider, Vercel integrations, GitHub repo)
-- **Open blockers:** hosted provisioning + P0-05 (auth provider) need the user's cloud accounts (see Section 6). Local work proceeds.
-- **Last updated:** 2026-06-13, aarit — P0-07 (org-isolation, GATE) DONE; RLS fail-closed proven; 76 tests green
+- **Active task:** none in progress. P0-10 is IN_REVIEW (awaiting domain-estimator sign-off on units). All locally-buildable Phase 0 work is complete.
+- **Next up:** the remaining Phase 0 tasks need the user's accounts — P0-05 (auth provider), P0-04 hosted (Vercel/Neon/Upstash/Blob), P0-08 (CI + GitHub). OR begin local-buildable Phase 1 work (e.g. P1-01 uploads against local MinIO) — Phase 1 formally waits on the P0-10 sign-off.
+- **Open blockers:** see Section 6 — hosted provisioning, auth provider, and CI/deploy all need cloud/GitHub accounts. P0-10 needs estimator sign-off.
+- **Last updated:** 2026-06-13, aarit — P0-10 seed trades/conditions built & tested (IN_REVIEW); 80 tests green. 5 DONE / 1 IN_REVIEW / 1 IN_PROGRESS.
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
@@ -72,7 +72,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P0-07 | Org-isolation data-access layer | P0-06 | YES | aarit | DONE |
 | P0-08 | CI/CD pipeline | P0-01, P0-04 | no | - | NOT_STARTED |
 | P0-09 | Observability skeleton | P0-08 | no | - | NOT_STARTED |
-| P0-10 | Seed trade structure and starter conditions | P0-03 | YES | - | NOT_STARTED |
+| P0-10 | Seed trade structure and starter conditions | P0-03 | YES | aarit | IN_REVIEW |
 
 ### Phase 1 — Manual Takeoff  (progress: 0/14 DONE)
 
@@ -148,7 +148,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P5-05 | Cloud-storage import | none | no | - | NOT_STARTED |
 | P5-06 | Security review and penetration test | P0-07 | no | - | NOT_STARTED |
 
-**Totals:** 59 tasks. 5 DONE / 1 IN_PROGRESS / 0 BLOCKED / 53 NOT_STARTED. Update these counts as you go.
+**Totals:** 59 tasks. 5 DONE / 1 IN_PROGRESS / 1 IN_REVIEW / 0 BLOCKED / 52 NOT_STARTED. Update these counts as you go.
 
 ---
 
@@ -157,7 +157,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 A gate must have passing tests before the phase it belongs to is considered finished and the next phase begins. Mark each PASS only when its task is DONE and verified.
 
 - [x] P0-07 — Org isolation proven fail-closed at the data layer (RLS + non-superuser role + withOrgScope). Proven on projects & memberships; the guard test forces RLS on every future org_id table as Phase 1 entities land. (Signed-URL scoping/expiry → P1-01.)
-- [ ] P0-10 — Seed trades and conditions exist and are estimator-approved
+- [~] P0-10 — Seed trades & starter conditions exist, load idempotently, and are visible to new orgs (tested; unit↔type validated). **Awaiting domain-estimator sign-off** on the trade list & units (provisional catalog in `apps/web/server/modules/trades/seed-data.ts`).
 - [ ] P1-06 — Viewer meets the performance budget on representative hardware
 - [ ] P1-11 — Quantity rollups are server-authoritative and tamper-proof
 - [ ] P1-14 — Exports match rollups exactly
@@ -199,7 +199,7 @@ Record decisions that future tasks depend on, especially the ones with no single
 | 2026-06-13 | Processing/AI/realtime compute home: **TBD at Phase 2** | Phases 0–1 run on Vercel + Neon + Upstash + Blob. GPU inference, long workers, and the WebSocket gateway need a second host (serverless GPU like Modal/Replicate, or a container host like Render/Fly/AWS) — decide when AI lands. | P2-02, P2-*, P1-02..P1-04 (workers), realtime |
 | - | Working raster DPI for sheets: TBD | Too low harms AI accuracy; too high inflates storage and processing | P1-03, P2-04, P2-06, P2-07 |
 | - | Self-intersecting polygon policy: TBD (reject or auto-correct) | Areas must never be ambiguous | P1-09, geometry package |
-| - | Launch trade list and condition units: TBD with domain estimator | Wrong units corrupt every quantity downstream | P0-10, P1-10 |
+| 2026-06-13 | Launch trade list & condition units: **provisional catalog in place** (6 trades / 14 conditions, `seed-data.ts`), unit↔type machine-validated — but NOT yet domain-estimator-approved | Wrong units corrupt every quantity downstream; the catalog is an engineering placeholder pending sign-off (P0-10 GATE held in IN_REVIEW until then) | P0-10, P1-10 |
 | - | Auto-accept confidence thresholds per class: start conservative | Trust depends on not auto-accepting wrong candidates | P2-10, P4-06 |
 | - | Dispute and auto-accept windows for orders: TBD | Must be explicit and customer-visible | P3-07, P4-04 |
 

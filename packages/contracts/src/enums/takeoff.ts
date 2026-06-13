@@ -46,6 +46,20 @@ export const UNIT_DIMENSION: Readonly<Record<Unit, QuantityDimension>> = {
   EA: 'COUNT',
 };
 
+/** The physical dimension each measurement type resolves to. SURFACE_AREA is an area. */
+export const MEASUREMENT_TYPE_DIMENSION: Readonly<Record<MeasurementType, QuantityDimension>> = {
+  LINEAR: 'LENGTH',
+  AREA: 'AREA',
+  COUNT: 'COUNT',
+  VOLUME: 'VOLUME',
+  SURFACE_AREA: 'AREA',
+};
+
+/** Whether a unit is valid for a measurement type (their dimensions must match). */
+export function isUnitValidFor(measurementType: MeasurementType, unit: Unit): boolean {
+  return UNIT_DIMENSION[unit] === MEASUREMENT_TYPE_DIMENSION[measurementType];
+}
+
 /** Geometric kind of a measurement (spec §5.3, Measurement.geom_type). */
 export const GeometryType = z.enum(['POLYLINE', 'POLYGON', 'POINT', 'POINT_GROUP']);
 export type GeometryType = z.infer<typeof GeometryType>;
