@@ -10,10 +10,10 @@ This is the living state of the build. It is the single place a developer (or co
 ## 1. Current focus
 
 - **Active phase:** Phase 0 — Foundations
-- **Active task:** P0-03 — Core enumerations (next)
-- **Next up:** P0-04 (infrastructure for the dev environment; can run in parallel with P0-03)
+- **Active task:** P0-04 — Infrastructure for the dev environment (next)
+- **Next up:** P0-05 (identity provider & login), which depends on P0-04
 - **Open blockers:** none recorded yet (see Section 6)
-- **Last updated:** 2026-06-13, aarit — P0-02 (contracts package skeleton) DONE
+- **Last updated:** 2026-06-13, aarit — P0-03 (core enumerations) DONE
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
@@ -59,13 +59,13 @@ Other conventions:
 
 Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status as you work. Keep Task and Depends-on as written so cross-references stay valid.
 
-### Phase 0 — Foundations  (progress: 2/10 DONE)
+### Phase 0 — Foundations  (progress: 3/10 DONE)
 
 | ID | Task | Depends on | Gate | Owner | Status |
 |----|------|-----------|------|-------|--------|
 | P0-01 | Monorepo and workspace tooling | none | no | aarit | DONE |
 | P0-02 | Contracts package skeleton | P0-01 | no | aarit | DONE |
-| P0-03 | Core enumerations | P0-02 | no | - | NOT_STARTED |
+| P0-03 | Core enumerations | P0-02 | no | aarit | DONE |
 | P0-04 | Infrastructure for the dev environment | P0-01 | no | - | NOT_STARTED |
 | P0-05 | Identity provider and login flow | P0-04 | no | - | NOT_STARTED |
 | P0-06 | Accounts module: orgs, memberships, RBAC | P0-05, P0-03 | no | - | NOT_STARTED |
@@ -148,7 +148,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P5-05 | Cloud-storage import | none | no | - | NOT_STARTED |
 | P5-06 | Security review and penetration test | P0-07 | no | - | NOT_STARTED |
 
-**Totals:** 59 tasks. 2 DONE / 0 IN_PROGRESS / 0 BLOCKED / 57 NOT_STARTED. Update these counts as you go.
+**Totals:** 59 tasks. 3 DONE / 0 IN_PROGRESS / 0 BLOCKED / 56 NOT_STARTED. Update these counts as you go.
 
 ---
 
