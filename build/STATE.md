@@ -10,10 +10,10 @@ This is the living state of the build. It is the single place a developer (or co
 ## 1. Current focus
 
 - **Active phase:** Phase 0 — Foundations
-- **Active task:** P0-02 — Contracts package skeleton (next)
-- **Next up:** P0-03, then P0-04 (P0-04 can run in parallel with P0-02/03)
+- **Active task:** P0-03 — Core enumerations (next)
+- **Next up:** P0-04 (infrastructure for the dev environment; can run in parallel with P0-03)
 - **Open blockers:** none recorded yet (see Section 6)
-- **Last updated:** 2026-06-13, aarit — P0-01 (monorepo & workspace tooling) DONE
+- **Last updated:** 2026-06-13, aarit — P0-02 (contracts package skeleton) DONE
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
@@ -59,12 +59,12 @@ Other conventions:
 
 Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status as you work. Keep Task and Depends-on as written so cross-references stay valid.
 
-### Phase 0 — Foundations  (progress: 1/10 DONE)
+### Phase 0 — Foundations  (progress: 2/10 DONE)
 
 | ID | Task | Depends on | Gate | Owner | Status |
 |----|------|-----------|------|-------|--------|
 | P0-01 | Monorepo and workspace tooling | none | no | aarit | DONE |
-| P0-02 | Contracts package skeleton | P0-01 | no | - | NOT_STARTED |
+| P0-02 | Contracts package skeleton | P0-01 | no | aarit | DONE |
 | P0-03 | Core enumerations | P0-02 | no | - | NOT_STARTED |
 | P0-04 | Infrastructure for the dev environment | P0-01 | no | - | NOT_STARTED |
 | P0-05 | Identity provider and login flow | P0-04 | no | - | NOT_STARTED |
@@ -148,7 +148,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P5-05 | Cloud-storage import | none | no | - | NOT_STARTED |
 | P5-06 | Security review and penetration test | P0-07 | no | - | NOT_STARTED |
 
-**Totals:** 59 tasks. 1 DONE / 0 IN_PROGRESS / 0 BLOCKED / 58 NOT_STARTED. Update these counts as you go.
+**Totals:** 59 tasks. 2 DONE / 0 IN_PROGRESS / 0 BLOCKED / 57 NOT_STARTED. Update these counts as you go.
 
 ---
 
@@ -186,6 +186,7 @@ Record decisions that future tasks depend on, especially the ones with no single
 
 | Date | Decision | Context / rationale | Affects |
 |------|----------|---------------------|---------|
+| 2026-06-13 | Contract validation: **Zod**; internal packages are **source-consumed** (exports → `src/index.ts`, no emit); tests via **Vitest** | P0-02. Zod gives runtime validation + inferred static types from one definition. Source consumption (Next.js transpiles; workers built with tsup/tsx) avoids the ESM-extension footgun — `build`/`typecheck` = `tsc --noEmit`. Source packages add a local `turbo.json` (`"extends": ["//"]`, empty `outputs`) to silence Turbo's no-output warnings. | P0-03+ (all contract shapes); every TS package |
 | 2026-06-13 | Workspace tooling: **pnpm 9 workspaces + Turborepo 2**; ESLint 9 flat config + Prettier 3; internal scope `@takeoff/*` | P0-01. Canonical Vercel monorepo. Cross-package deep imports blocked by ESLint `no-restricted-imports` now. **Gotcha:** `corepack enable` fails on this Windows box (EPERM writing to `C:\Program Files\nodejs`) — pnpm was installed via `npm i -g pnpm@9.15.4` into the user prefix instead. Use that, not corepack, here. | P0-02+ (all TS packages/apps) |
 | 2026-06-13 | Hosting: app plane on **Vercel**, source of truth on **GitHub** | Product is hosted on Vercel; GitHub drives deploys (Vercel git integration) + GitHub Actions for CI. Vercel cannot run GPU/long workers/persistent WebSockets, so hosting is split by plane. | P0-01, P0-04, P0-08, all app-plane tasks |
 | 2026-06-13 | Frontend + app API: **Next.js (App Router)** full-stack on Vercel | Vercel-native; collapses the spec's Vite SPA + standalone NestJS into one app. Domain logic kept framework-agnostic under `apps/web/server` so it stays portable. Drop `sdk-client`. | P0-01, P0-02, P1-*, all API modules |
@@ -206,7 +207,7 @@ Record decisions that future tasks depend on, especially the ones with no single
 Track whether the shared scaffolding actually works, separate from feature progress. A coder resuming cold needs to know what is already standing.
 
 - [x] Repository cloned and builds from clean checkout (P0-01) — `pnpm install && pnpm build` green; lint/format gates verified
-- [ ] Contracts package importable across workspaces (P0-02)
+- [x] Contracts package importable across workspaces (P0-02) — `@takeoff/contracts` (Zod); cross-workspace type resolution verified
 - [ ] Dev environment provisioned from IaC; database spatial extension confirmed (P0-04)
 - [ ] Identity provider configured; login works end to end (P0-05)
 - [ ] CI runs lint, tests, build, and deploys to staging (P0-08)
