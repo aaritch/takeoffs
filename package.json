@@ -17,7 +17,12 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,md,yaml,yml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,cjs,json,md,yaml,yml}\"",
     "check": "pnpm run lint && pnpm run format:check && turbo run typecheck test build",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "dev:up": "docker compose -f tools/local-dev/docker-compose.yml up -d",
+    "dev:down": "docker compose -f tools/local-dev/docker-compose.yml down",
+    "dev:reset": "docker compose -f tools/local-dev/docker-compose.yml down -v",
+    "dev:logs": "docker compose -f tools/local-dev/docker-compose.yml logs -f",
+    "dev:psql": "docker compose -f tools/local-dev/docker-compose.yml exec postgres psql -U takeoff -d takeoff"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",

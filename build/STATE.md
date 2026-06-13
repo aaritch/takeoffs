@@ -10,10 +10,10 @@ This is the living state of the build. It is the single place a developer (or co
 ## 1. Current focus
 
 - **Active phase:** Phase 0 — Foundations
-- **Active task:** P0-04 — Infrastructure for the dev environment (next)
-- **Next up:** P0-05 (identity provider & login), which depends on P0-04
-- **Open blockers:** none recorded yet (see Section 6)
-- **Last updated:** 2026-06-13, aarit — P0-03 (core enumerations) DONE
+- **Active task:** P0-04 — Infrastructure for the dev environment (IN_PROGRESS: local stack done; hosted provisioning remains)
+- **Next up:** finish P0-04 cloud provisioning (needs cloud creds), then P0-05 (identity provider & login)
+- **Open blockers:** none blocking local work; hosted provisioning + P0-05 need the user's cloud accounts (see Section 6)
+- **Last updated:** 2026-06-13, aarit — P0-04 local docker-compose dev stack scaffolded & verified (PostGIS, Redis, MinIO)
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
@@ -66,7 +66,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P0-01 | Monorepo and workspace tooling | none | no | aarit | DONE |
 | P0-02 | Contracts package skeleton | P0-01 | no | aarit | DONE |
 | P0-03 | Core enumerations | P0-02 | no | aarit | DONE |
-| P0-04 | Infrastructure for the dev environment | P0-01 | no | - | NOT_STARTED |
+| P0-04 | Infrastructure for the dev environment | P0-01 | no | aarit | IN_PROGRESS |
 | P0-05 | Identity provider and login flow | P0-04 | no | - | NOT_STARTED |
 | P0-06 | Accounts module: orgs, memberships, RBAC | P0-05, P0-03 | no | - | NOT_STARTED |
 | P0-07 | Org-isolation data-access layer | P0-06 | YES | - | NOT_STARTED |
@@ -176,7 +176,8 @@ Record anything stopping progress. Remove or mark resolved when cleared. Keep ne
 
 | Date | Task | Blocker | Needs | Owner | Status |
 |------|------|---------|-------|-------|--------|
-| - | - | none recorded | - | - | - |
+| 2026-06-13 | P0-04 (hosted), P0-05, P0-08 | Cannot provision hosted dev/staging/prod or configure the identity provider without cloud accounts | User to create: Vercel project + Neon/Upstash/Blob integrations; an OIDC/OAuth2 provider; GitHub repo for CI/deploy | aarit | OPEN |
+| - | - | local development is unblocked (docker-compose stack works) | - | - | - |
 
 ---
 
@@ -186,6 +187,7 @@ Record decisions that future tasks depend on, especially the ones with no single
 
 | Date | Decision | Context / rationale | Affects |
 |------|----------|---------------------|---------|
+| 2026-06-13 | Local dev stack: **docker-compose** with `postgis/postgis:16-3.4`, `redis:7`, **MinIO** (S3-compatible) standing in for Vercel Blob | P0-04 (local portion). Mirrors the hosted data layer so app/workers run end-to-end without cloud accounts; storage adapter makes MinIO↔Blob a config swap. Run via `pnpm dev:up`/`dev:down`/`dev:reset`. PostGIS verified (spatial column create/insert/drop; reset+up repeatable). | P0-05+, P1-* (data layer, geometry) |
 | 2026-06-13 | Contract validation: **Zod**; internal packages are **source-consumed** (exports → `src/index.ts`, no emit); tests via **Vitest** | P0-02. Zod gives runtime validation + inferred static types from one definition. Source consumption (Next.js transpiles; workers built with tsup/tsx) avoids the ESM-extension footgun — `build`/`typecheck` = `tsc --noEmit`. Source packages add a local `turbo.json` (`"extends": ["//"]`, empty `outputs`) to silence Turbo's no-output warnings. | P0-03+ (all contract shapes); every TS package |
 | 2026-06-13 | Workspace tooling: **pnpm 9 workspaces + Turborepo 2**; ESLint 9 flat config + Prettier 3; internal scope `@takeoff/*` | P0-01. Canonical Vercel monorepo. Cross-package deep imports blocked by ESLint `no-restricted-imports` now. **Gotcha:** `corepack enable` fails on this Windows box (EPERM writing to `C:\Program Files\nodejs`) — pnpm was installed via `npm i -g pnpm@9.15.4` into the user prefix instead. Use that, not corepack, here. | P0-02+ (all TS packages/apps) |
 | 2026-06-13 | Hosting: app plane on **Vercel**, source of truth on **GitHub** | Product is hosted on Vercel; GitHub drives deploys (Vercel git integration) + GitHub Actions for CI. Vercel cannot run GPU/long workers/persistent WebSockets, so hosting is split by plane. | P0-01, P0-04, P0-08, all app-plane tasks |
@@ -208,7 +210,7 @@ Track whether the shared scaffolding actually works, separate from feature progr
 
 - [x] Repository cloned and builds from clean checkout (P0-01) — `pnpm install && pnpm build` green; lint/format gates verified
 - [x] Contracts package importable across workspaces (P0-02) — `@takeoff/contracts` (Zod); cross-workspace type resolution verified
-- [ ] Dev environment provisioned from IaC; database spatial extension confirmed (P0-04)
+- [~] Dev environment (P0-04): **local** docker-compose stack up & PostGIS spatial column verified (create/insert/drop, reset+up repeatable); **hosted** provisioning (Neon/Upstash/Blob via Vercel) still pending cloud creds
 - [ ] Identity provider configured; login works end to end (P0-05)
 - [ ] CI runs lint, tests, build, and deploys to staging (P0-08)
 - [ ] Correlation id traces a request across services (P0-09)
