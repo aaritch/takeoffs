@@ -10,10 +10,10 @@ This is the living state of the build. It is the single place a developer (or co
 ## 1. Current focus
 
 - **Active phase:** Phase 0 — Foundations
-- **Active task:** none in progress. P0-10 is IN_REVIEW (awaiting domain-estimator sign-off on units). All locally-buildable Phase 0 work is complete.
-- **Next up:** the remaining Phase 0 tasks need the user's accounts — P0-05 (auth provider), P0-04 hosted (Vercel/Neon/Upstash/Blob), P0-08 (CI + GitHub). OR begin local-buildable Phase 1 work (e.g. P1-01 uploads against local MinIO) — Phase 1 formally waits on the P0-10 sign-off.
-- **Open blockers:** see Section 6 — hosted provisioning, auth provider, and CI/deploy all need cloud/GitHub accounts. P0-10 needs estimator sign-off.
-- **Last updated:** 2026-06-13, aarit — P0-10 seed trades/conditions built & tested (IN_REVIEW); 80 tests green. 5 DONE / 1 IN_REVIEW / 1 IN_PROGRESS.
+- **Active task:** none — **session paused** here. Nothing in progress; working tree is clean once this update is committed.
+- **Next up (resume here):** build the **`@takeoff/geometry` package** — the pure scale/length/area/volume/quantity math (the package portion of P1-08, design noted in §7 decision log). Fully local, no frontend/DB. Then P1-10 (Conditions CRUD, deps P0-10+P1-08). Frontend/worker Phase 1 tasks await P0-05 (Next.js app shell) + worker infra.
+- **Open blockers:** see Section 6 — hosted provisioning, auth provider, and CI/deploy need cloud/GitHub accounts; P0-10 needs estimator sign-off. None block the geometry package.
+- **Last updated:** 2026-06-13, aarit — paused after P0-10 (IN_REVIEW). 5 DONE / 1 IN_REVIEW / 1 IN_PROGRESS (P0-04 local). 80 tests green; local docker stack may still be running (`pnpm dev:down` to stop).
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
@@ -176,6 +176,7 @@ Record anything stopping progress. Remove or mark resolved when cleared. Keep ne
 
 | Date | Task | Blocker | Needs | Owner | Status |
 |------|------|---------|-------|-------|--------|
+| 2026-06-13 | P1-08 (planned) | Plan to build the pure `@takeoff/geometry` package before its registry deps (P1-07 viewer) and before the P0-10 gate sign-off | Risk accepted in advance: the geometry/scale/quantity math is pure, UI-free, and the foundation P1-09/P1-11 depend on — ideal local work. Build ONLY the package; the two-point scale-calibration UI part of P1-08 waits for the viewer (P1-06/07). **Not yet started — paused before writing any files.** | aarit | PLANNED |
 | 2026-06-13 | P0-06 | Started before its dependency P0-05 (identity provider) is DONE | Risk accepted: build accounts domain + RBAC against local Postgres; the authenticated-user identity is abstracted behind an `AuthContext` resolver so P0-05's OIDC/JIT-provisioning plugs in without rework. No live auth needed to build/test the domain. | aarit | ACCEPTED |
 | 2026-06-13 | P0-04 (hosted), P0-05, P0-08 | Cannot provision hosted dev/staging/prod or configure the identity provider without cloud accounts | User to create: Vercel project + Neon/Upstash/Blob integrations; an OIDC/OAuth2 provider; GitHub repo for CI/deploy | aarit | OPEN |
 | - | - | local development is unblocked (docker-compose stack works) | - | - | - |
