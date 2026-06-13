@@ -1,0 +1,29 @@
+{
+  "name": "@takeoff/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Application plane: Next.js UI + synchronous API (Vercel). Next wiring lands in P0-05; for now this holds the framework-agnostic server domain (data layer, accounts module).",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx server/data/migrate.ts",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@takeoff/auth": "workspace:*",
+    "@takeoff/contracts": "workspace:*",
+    "drizzle-orm": "^0.38.3",
+    "pg": "^8.13.1",
+    "uuidv7": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.11",
+    "drizzle-kit": "^0.30.2",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.9"
+  }
+}

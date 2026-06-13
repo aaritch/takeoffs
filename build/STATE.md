@@ -10,10 +10,10 @@ This is the living state of the build. It is the single place a developer (or co
 ## 1. Current focus
 
 - **Active phase:** Phase 0 — Foundations
-- **Active task:** P0-04 — Infrastructure for the dev environment (IN_PROGRESS: local stack done; hosted provisioning remains)
-- **Next up:** finish P0-04 cloud provisioning (needs cloud creds), then P0-05 (identity provider & login)
-- **Open blockers:** none blocking local work; hosted provisioning + P0-05 need the user's cloud accounts (see Section 6)
-- **Last updated:** 2026-06-13, aarit — P0-04 local docker-compose dev stack scaffolded & verified (PostGIS, Redis, MinIO)
+- **Active task:** P0-07 — Org-isolation data-access layer (GATE). Builds on P0-06; local-buildable.
+- **Next up:** P0-10 (seed trades, GATE — local-buildable) or P0-05/P0-04-hosted once cloud creds exist
+- **Open blockers:** hosted provisioning + P0-05 (auth provider) need the user's cloud accounts (see Section 6). Local work proceeds.
+- **Last updated:** 2026-06-13, aarit — P0-06 (accounts: orgs/memberships/RBAC) DONE; 66 tests green vs local Postgres
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
@@ -59,7 +59,7 @@ Other conventions:
 
 Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status as you work. Keep Task and Depends-on as written so cross-references stay valid.
 
-### Phase 0 — Foundations  (progress: 3/10 DONE)
+### Phase 0 — Foundations  (progress: 4/10 DONE)
 
 | ID | Task | Depends on | Gate | Owner | Status |
 |----|------|-----------|------|-------|--------|
@@ -68,7 +68,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P0-03 | Core enumerations | P0-02 | no | aarit | DONE |
 | P0-04 | Infrastructure for the dev environment | P0-01 | no | aarit | IN_PROGRESS |
 | P0-05 | Identity provider and login flow | P0-04 | no | - | NOT_STARTED |
-| P0-06 | Accounts module: orgs, memberships, RBAC | P0-05, P0-03 | no | - | NOT_STARTED |
+| P0-06 | Accounts module: orgs, memberships, RBAC | P0-05, P0-03 | no | aarit | DONE |
 | P0-07 | Org-isolation data-access layer | P0-06 | YES | - | NOT_STARTED |
 | P0-08 | CI/CD pipeline | P0-01, P0-04 | no | - | NOT_STARTED |
 | P0-09 | Observability skeleton | P0-08 | no | - | NOT_STARTED |
@@ -148,7 +148,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P5-05 | Cloud-storage import | none | no | - | NOT_STARTED |
 | P5-06 | Security review and penetration test | P0-07 | no | - | NOT_STARTED |
 
-**Totals:** 59 tasks. 3 DONE / 0 IN_PROGRESS / 0 BLOCKED / 56 NOT_STARTED. Update these counts as you go.
+**Totals:** 59 tasks. 4 DONE / 1 IN_PROGRESS / 0 BLOCKED / 54 NOT_STARTED. Update these counts as you go.
 
 ---
 
@@ -176,6 +176,7 @@ Record anything stopping progress. Remove or mark resolved when cleared. Keep ne
 
 | Date | Task | Blocker | Needs | Owner | Status |
 |------|------|---------|-------|-------|--------|
+| 2026-06-13 | P0-06 | Started before its dependency P0-05 (identity provider) is DONE | Risk accepted: build accounts domain + RBAC against local Postgres; the authenticated-user identity is abstracted behind an `AuthContext` resolver so P0-05's OIDC/JIT-provisioning plugs in without rework. No live auth needed to build/test the domain. | aarit | ACCEPTED |
 | 2026-06-13 | P0-04 (hosted), P0-05, P0-08 | Cannot provision hosted dev/staging/prod or configure the identity provider without cloud accounts | User to create: Vercel project + Neon/Upstash/Blob integrations; an OIDC/OAuth2 provider; GitHub repo for CI/deploy | aarit | OPEN |
 | - | - | local development is unblocked (docker-compose stack works) | - | - | - |
 
@@ -187,6 +188,7 @@ Record decisions that future tasks depend on, especially the ones with no single
 
 | Date | Decision | Context / rationale | Affects |
 |------|----------|---------------------|---------|
+| 2026-06-13 | Data layer: **Drizzle ORM + drizzle-kit** (Postgres). RBAC lives in **`@takeoff/auth`**; accounts domain + data layer live in **`apps/web/server`** (framework-agnostic; Next.js wiring added in P0-05) | P0-06. Drizzle chosen over Prisma for first-class PostGIS/custom-type support and Neon-serverless fit. `pg` driver locally; Neon serverless driver added for Vercel later. App code already lands in its final home (`apps/web/server`) so P0-05 only adds Next routes/auth, not a move. | P0-06, P0-07, P1-* (every entity, migrations) |
 | 2026-06-13 | Local dev stack: **docker-compose** with `postgis/postgis:16-3.4`, `redis:7`, **MinIO** (S3-compatible) standing in for Vercel Blob | P0-04 (local portion). Mirrors the hosted data layer so app/workers run end-to-end without cloud accounts; storage adapter makes MinIO↔Blob a config swap. Run via `pnpm dev:up`/`dev:down`/`dev:reset`. PostGIS verified (spatial column create/insert/drop; reset+up repeatable). | P0-05+, P1-* (data layer, geometry) |
 | 2026-06-13 | Contract validation: **Zod**; internal packages are **source-consumed** (exports → `src/index.ts`, no emit); tests via **Vitest** | P0-02. Zod gives runtime validation + inferred static types from one definition. Source consumption (Next.js transpiles; workers built with tsup/tsx) avoids the ESM-extension footgun — `build`/`typecheck` = `tsc --noEmit`. Source packages add a local `turbo.json` (`"extends": ["//"]`, empty `outputs`) to silence Turbo's no-output warnings. | P0-03+ (all contract shapes); every TS package |
 | 2026-06-13 | Workspace tooling: **pnpm 9 workspaces + Turborepo 2**; ESLint 9 flat config + Prettier 3; internal scope `@takeoff/*` | P0-01. Canonical Vercel monorepo. Cross-package deep imports blocked by ESLint `no-restricted-imports` now. **Gotcha:** `corepack enable` fails on this Windows box (EPERM writing to `C:\Program Files\nodejs`) — pnpm was installed via `npm i -g pnpm@9.15.4` into the user prefix instead. Use that, not corepack, here. | P0-02+ (all TS packages/apps) |
