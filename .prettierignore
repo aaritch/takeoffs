@@ -1,0 +1,10 @@
+node_modules
+dist
+.next
+.turbo
+coverage
+pnpm-lock.yaml
+# Planning corpus — leave the authored docs formatting untouched.
+build
+*.docx
+*.pdf

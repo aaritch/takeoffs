@@ -1,0 +1,8 @@
+# pnpm workspace definition.
+# Folders appear as the phases that need them land (see docs build plan §3).
+# The Python services (apps/ai-inference, ml/) are NOT pnpm workspaces — they carry
+# their own dependency definitions (pyproject/requirements) and a separate lifecycle.
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - '!apps/ai-inference'

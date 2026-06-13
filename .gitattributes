@@ -1,0 +1,15 @@
+# Normalize line endings to LF in the repo so the Prettier format gate (endOfLine: lf)
+# stays stable across Windows/macOS/Linux checkouts.
+* text=auto eol=lf
+
+# Binary assets — never normalize.
+*.pdf binary
+*.docx binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+
+# Lockfile is generated; collapse diffs in review.
+pnpm-lock.yaml linguist-generated=true -diff
