@@ -8,6 +8,20 @@
       "when": 1781361595820,
       "tag": "0000_safe_aaron_stack",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781363196167,
+      "tag": "0001_wide_microchip",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781363205144,
+      "tag": "0002_org_rls",
+      "breakpoints": true
     }
   ]
 }

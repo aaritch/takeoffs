@@ -10,10 +10,10 @@ This is the living state of the build. It is the single place a developer (or co
 ## 1. Current focus
 
 - **Active phase:** Phase 0 — Foundations
-- **Active task:** P0-07 — Org-isolation data-access layer (GATE). Builds on P0-06; local-buildable.
-- **Next up:** P0-10 (seed trades, GATE — local-buildable) or P0-05/P0-04-hosted once cloud creds exist
+- **Active task:** P0-10 — Seed trade structure & starter conditions (GATE; local-buildable; needs domain-estimator sign-off on units)
+- **Next up:** P0-05 / P0-04-hosted / P0-08 once cloud creds exist (auth provider, Vercel integrations, GitHub repo)
 - **Open blockers:** hosted provisioning + P0-05 (auth provider) need the user's cloud accounts (see Section 6). Local work proceeds.
-- **Last updated:** 2026-06-13, aarit — P0-06 (accounts: orgs/memberships/RBAC) DONE; 66 tests green vs local Postgres
+- **Last updated:** 2026-06-13, aarit — P0-07 (org-isolation, GATE) DONE; RLS fail-closed proven; 76 tests green
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
@@ -59,7 +59,7 @@ Other conventions:
 
 Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status as you work. Keep Task and Depends-on as written so cross-references stay valid.
 
-### Phase 0 — Foundations  (progress: 4/10 DONE)
+### Phase 0 — Foundations  (progress: 5/10 DONE)
 
 | ID | Task | Depends on | Gate | Owner | Status |
 |----|------|-----------|------|-------|--------|
@@ -69,7 +69,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P0-04 | Infrastructure for the dev environment | P0-01 | no | aarit | IN_PROGRESS |
 | P0-05 | Identity provider and login flow | P0-04 | no | - | NOT_STARTED |
 | P0-06 | Accounts module: orgs, memberships, RBAC | P0-05, P0-03 | no | aarit | DONE |
-| P0-07 | Org-isolation data-access layer | P0-06 | YES | - | NOT_STARTED |
+| P0-07 | Org-isolation data-access layer | P0-06 | YES | aarit | DONE |
 | P0-08 | CI/CD pipeline | P0-01, P0-04 | no | - | NOT_STARTED |
 | P0-09 | Observability skeleton | P0-08 | no | - | NOT_STARTED |
 | P0-10 | Seed trade structure and starter conditions | P0-03 | YES | - | NOT_STARTED |
@@ -148,7 +148,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P5-05 | Cloud-storage import | none | no | - | NOT_STARTED |
 | P5-06 | Security review and penetration test | P0-07 | no | - | NOT_STARTED |
 
-**Totals:** 59 tasks. 4 DONE / 1 IN_PROGRESS / 0 BLOCKED / 54 NOT_STARTED. Update these counts as you go.
+**Totals:** 59 tasks. 5 DONE / 1 IN_PROGRESS / 0 BLOCKED / 53 NOT_STARTED. Update these counts as you go.
 
 ---
 
@@ -156,7 +156,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 
 A gate must have passing tests before the phase it belongs to is considered finished and the next phase begins. Mark each PASS only when its task is DONE and verified.
 
-- [ ] P0-07 — Org isolation proven across every entity (fail-closed)
+- [x] P0-07 — Org isolation proven fail-closed at the data layer (RLS + non-superuser role + withOrgScope). Proven on projects & memberships; the guard test forces RLS on every future org_id table as Phase 1 entities land. (Signed-URL scoping/expiry → P1-01.)
 - [ ] P0-10 — Seed trades and conditions exist and are estimator-approved
 - [ ] P1-06 — Viewer meets the performance budget on representative hardware
 - [ ] P1-11 — Quantity rollups are server-authoritative and tamper-proof
@@ -188,6 +188,7 @@ Record decisions that future tasks depend on, especially the ones with no single
 
 | Date | Decision | Context / rationale | Affects |
 |------|----------|---------------------|---------|
+| 2026-06-13 | Org isolation: **Postgres RLS** (FORCE) keyed on a per-tx `app.current_org_id`, set via `withOrgScope`; tenant access uses a **non-superuser role** (`takeoff_app` locally) so RLS bites; admin/identity uses the superuser conn. `enable_org_rls(table)` applied per customer-owned table; an introspection **guard test** fails the build if any org_id table lacks RLS. Storage keys namespaced `org/{id}/…`. | P0-07 GATE; P1-* (every customer-owned table must call enable_org_rls); signed-URL scoping → P1-01 |
 | 2026-06-13 | Data layer: **Drizzle ORM + drizzle-kit** (Postgres). RBAC lives in **`@takeoff/auth`**; accounts domain + data layer live in **`apps/web/server`** (framework-agnostic; Next.js wiring added in P0-05) | P0-06. Drizzle chosen over Prisma for first-class PostGIS/custom-type support and Neon-serverless fit. `pg` driver locally; Neon serverless driver added for Vercel later. App code already lands in its final home (`apps/web/server`) so P0-05 only adds Next routes/auth, not a move. | P0-06, P0-07, P1-* (every entity, migrations) |
 | 2026-06-13 | Local dev stack: **docker-compose** with `postgis/postgis:16-3.4`, `redis:7`, **MinIO** (S3-compatible) standing in for Vercel Blob | P0-04 (local portion). Mirrors the hosted data layer so app/workers run end-to-end without cloud accounts; storage adapter makes MinIO↔Blob a config swap. Run via `pnpm dev:up`/`dev:down`/`dev:reset`. PostGIS verified (spatial column create/insert/drop; reset+up repeatable). | P0-05+, P1-* (data layer, geometry) |
 | 2026-06-13 | Contract validation: **Zod**; internal packages are **source-consumed** (exports → `src/index.ts`, no emit); tests via **Vitest** | P0-02. Zod gives runtime validation + inferred static types from one definition. Source consumption (Next.js transpiles; workers built with tsup/tsx) avoids the ESM-extension footgun — `build`/`typecheck` = `tsc --noEmit`. Source packages add a local `turbo.json` (`"extends": ["//"]`, empty `outputs`) to silence Turbo's no-output warnings. | P0-03+ (all contract shapes); every TS package |

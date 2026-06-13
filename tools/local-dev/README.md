@@ -37,6 +37,8 @@ the full annotated list.
 ```dotenv
 DATABASE_URL=postgres://takeoff:takeoff@localhost:5432/takeoff
 DATABASE_URL_UNPOOLED=postgres://takeoff:takeoff@localhost:5432/takeoff
+# Non-superuser, RLS-subject role for tenant (org-scoped) access — enforces org isolation.
+APP_DATABASE_URL=postgres://takeoff_app:takeoff_app@localhost:5432/takeoff
 REDIS_URL=redis://localhost:6379
 S3_ENDPOINT=http://localhost:9000
 S3_REGION=us-east-1
