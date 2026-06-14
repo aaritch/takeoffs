@@ -84,6 +84,16 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@22.19.21)
 
+  packages/geometry:
+    dependencies:
+      '@takeoff/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.21)
+
 packages:
 
   '@drizzle-team/brocli@0.10.2':
