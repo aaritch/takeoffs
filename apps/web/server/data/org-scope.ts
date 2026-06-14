@@ -41,3 +41,19 @@ export async function withOrgScope<T>(
     return fn(tx);
   });
 }
+
+/**
+ * The org id of the active scope, read back from the transaction setting. Lets scoped code set a
+ * new row's org_id directly from the scope (so it always matches the RLS WITH CHECK) without
+ * threading the id through every call. Throws if called outside an org scope.
+ */
+export async function currentOrgId(tx: OrgScopedTx): Promise<string> {
+  const res = await tx.execute(
+    sql`select nullif(current_setting('app.current_org_id', true), '') as org_id`,
+  );
+  const orgId = (res.rows as { org_id: string | null }[])[0]?.org_id;
+  if (!orgId) {
+    throw new Error('No org scope is active');
+  }
+  return orgId;
+}

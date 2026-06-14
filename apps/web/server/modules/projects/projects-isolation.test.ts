@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createDb, type DbHandle } from '../../data/client';
 import { withOrgScope } from '../../data/org-scope';
 import { projects } from '../../data/schema';
@@ -25,7 +25,7 @@ beforeAll(async () => {
   await migrate(admin.db, { migrationsFolder });
 });
 
-afterEach(async () => {
+beforeEach(async () => {
   await admin.db.execute(
     sql`TRUNCATE projects, memberships, service_profiles, organizations, users RESTART IDENTITY CASCADE`,
   );

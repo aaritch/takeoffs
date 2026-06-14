@@ -17,6 +17,7 @@
   "dependencies": {
     "@takeoff/auth": "workspace:*",
     "@takeoff/contracts": "workspace:*",
+    "@takeoff/geometry": "workspace:*",
     "drizzle-orm": "^0.38.3",
     "pg": "^8.13.1",
     "uuidv7": "^1.0.2"

@@ -41,6 +41,9 @@ importers:
       '@takeoff/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@takeoff/geometry':
+        specifier: workspace:*
+        version: link:../../packages/geometry
       drizzle-orm:
         specifier: ^0.38.3
         version: 0.38.4(@types/pg@8.20.0)(pg@8.21.0)

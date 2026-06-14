@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { can } from '@takeoff/auth';
 import { createDb, type DbHandle } from '../../data/client';
 import { resolveAuthContext } from './auth-context';
@@ -20,7 +20,7 @@ beforeAll(async () => {
   await migrate(handle.db, { migrationsFolder });
 });
 
-afterEach(async () => {
+beforeEach(async () => {
   await handle.db.execute(
     sql`TRUNCATE memberships, service_profiles, organizations, users RESTART IDENTITY CASCADE`,
   );
