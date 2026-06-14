@@ -4,3 +4,4 @@ export * from './enums';
 export * from './http';
 export * from './events';
 export * from './jobs';
+export * from './measurements';

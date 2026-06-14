@@ -10,8 +10,8 @@ This is the living state of the build. It is the single place a developer (or co
 ## 1. Current focus
 
 - **Active phase:** Phase 0 — Foundations
-- **Active task:** none in progress (P1-10 just DONE). P1-08 package done (UI pending viewer); P0-04 local done (hosted pending creds).
-- **Next up:** **P1-11** (server-authoritative quantity rollups, GATE) is the best next local task — its server core (measurements table + recompute + tamper-resistance) can be built/tested with synthetic measurements ahead of the P1-09 tools UI. Most other Phase 1 tasks need the Next.js frontend (P0-05) or worker infra.
+- **Active task:** none in progress. P1-11 (server-authoritative rollups, GATE) DONE. **Local headless backend work for Phase 1 is now largely exhausted.**
+- **Next up:** the remaining Phase 1 tasks need the **Next.js frontend** (viewer P1-06 GATE, overlay P1-07, tools P1-09, uploads-client P1-01, undo P1-12) or **worker infra** (ingestion P1-02, raster/tile P1-03, extract P1-04, reports/export P1-13/14). These need P0-05 (app shell) and a worker host — i.e. the user's cloud/GitHub accounts. Good moment to set those up, or get P0-10 estimator sign-off.
 - **Open blockers:** see Section 6 — hosted provisioning, auth provider, and CI/deploy need cloud/GitHub accounts; P0-10 needs estimator sign-off.
 - **Last updated:** 2026-06-14, aarit — P1-10 (Conditions CRUD + validation + per-condition quantity math) DONE; 116 tests green. Added minimal takeoffs table to anchor conditions.
 
@@ -74,7 +74,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P0-09 | Observability skeleton | P0-08 | no | - | NOT_STARTED |
 | P0-10 | Seed trade structure and starter conditions | P0-03 | YES | aarit | IN_REVIEW |
 
-### Phase 1 — Manual Takeoff  (progress: 1/14 DONE)
+### Phase 1 — Manual Takeoff  (progress: 2/14 DONE)
 
 | ID | Task | Depends on | Gate | Owner | Status |
 |----|------|-----------|------|-------|--------|
@@ -88,7 +88,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P1-08 | Scale calibration and geometry package | P1-07 | no | aarit | IN_PROGRESS |
 | P1-09 | Manual measurement tools | P1-08 | no | - | NOT_STARTED |
 | P1-10 | Conditions, units, and factors | P0-10, P1-08 | no | aarit | DONE |
-| P1-11 | Server-authoritative quantity rollups | P1-09, P1-10 | YES | - | NOT_STARTED |
+| P1-11 | Server-authoritative quantity rollups | P1-09, P1-10 | YES | aarit | DONE |
 | P1-12 | Undo/redo | P1-09 | no | - | NOT_STARTED |
 | P1-13 | Reports and exports | P1-11 | no | - | NOT_STARTED |
 | P1-14 | Export-vs-rollup parity | P1-13 | YES | - | NOT_STARTED |
@@ -148,7 +148,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P5-05 | Cloud-storage import | none | no | - | NOT_STARTED |
 | P5-06 | Security review and penetration test | P0-07 | no | - | NOT_STARTED |
 
-**Totals:** 59 tasks. 6 DONE / 2 IN_PROGRESS / 1 IN_REVIEW / 0 BLOCKED / 50 NOT_STARTED. Update these counts as you go.
+**Totals:** 59 tasks. 7 DONE / 2 IN_PROGRESS / 1 IN_REVIEW / 0 BLOCKED / 49 NOT_STARTED. Update these counts as you go.
 
 ---
 
@@ -159,7 +159,7 @@ A gate must have passing tests before the phase it belongs to is considered fini
 - [x] P0-07 — Org isolation proven fail-closed at the data layer (RLS + non-superuser role + withOrgScope). Proven on projects & memberships; the guard test forces RLS on every future org_id table as Phase 1 entities land. (Signed-URL scoping/expiry → P1-01.)
 - [~] P0-10 — Seed trades & starter conditions exist, load idempotently, and are visible to new orgs (tested; unit↔type validated). **Awaiting domain-estimator sign-off** on the trade list & units (provisional catalog in `apps/web/server/modules/trades/seed-data.ts`).
 - [ ] P1-06 — Viewer meets the performance budget on representative hardware
-- [ ] P1-11 — Quantity rollups are server-authoritative and tamper-proof
+- [x] P1-11 — Quantity rollups are server-authoritative and tamper-proof (server core: client submits geometry only, server computes raw_value + recomputes rollup from the full set; add/edit/delete + convergence tested). Client "recomputing" indicator + debounce are frontend (P1-09).
 - [ ] P1-14 — Exports match rollups exactly
 - [ ] P2-05 — Unconfirmed-scale sheets excluded from final reports
 - [ ] P2-11 — Every AI correction captured as feedback
@@ -176,6 +176,8 @@ Record anything stopping progress. Remove or mark resolved when cleared. Keep ne
 
 | Date | Task | Blocker | Needs | Owner | Status |
 |------|------|---------|-------|-------|--------|
+| 2026-06-14 | P1-11 | Measurement geometry stored as **JSONB** (normalized coords) for now; quantities computed via the pure `@takeoff/geometry` package, not PostGIS `ST_*` | The single conversion path is the geometry package (spec §9 / "every quantity flows through it"); drizzle's PostGIS polygon support is weak. **PostGIS geometry columns + spatial math (ST_Length/Area/intersects) are deferred** to when spatial ops are needed (snapping/overlap, P1-07/P2). PostGIS requirement (P0-04) still stands for that. | P1-11, P1-07, P2-06/07 |
+| 2026-06-14 | P1-11 (early start) | Building the rollup SERVER core before P1-09 (drawing tools, frontend) | Risk accepted: rollups are computed from the authoritative measurement set; that set can be created with synthetic measurements (as the tools will) and tested headlessly. The tools UI is a separate frontend task. | aarit | ACCEPTED |
 | 2026-06-14 | P1-10 | Added a **minimal `takeoffs` table** (spec §5.3) to anchor conditions; full takeoff lifecycle is a later task. Per-condition quantity math (waste/derived/extended-cost) lives in `conditions/quantities.ts` (pure, on @takeoff/geometry); the persisted rollup over a measurement set is P1-11. `plan_set_id` on takeoffs is nullable until plan sets exist. | P1-10; P1-11 (rollups), takeoff lifecycle |
 | 2026-06-14 | P1-08 | Built the pure `@takeoff/geometry` package ahead of its registry deps (P1-07 viewer) and the P0-10 gate | Risk accepted: geometry/scale/quantity math is pure, UI-free, the foundation P1-09/P1-11 depend on. Package DONE & tested (25 tests incl. metric/imperial calibration, holes, self-intersection, e2e calibrate→quantity). The two-point scale-calibration UI part of P1-08 still waits for the viewer (P1-06/07). | aarit | DONE (pkg) |
 | 2026-06-13 | P0-06 | Started before its dependency P0-05 (identity provider) is DONE | Risk accepted: build accounts domain + RBAC against local Postgres; the authenticated-user identity is abstracted behind an `AuthContext` resolver so P0-05's OIDC/JIT-provisioning plugs in without rework. No live auth needed to build/test the domain. | aarit | ACCEPTED |
