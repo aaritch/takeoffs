@@ -12,8 +12,8 @@ This is the living state of the build. It is the single place a developer (or co
 - **Active phase:** Phase 0 — Foundations
 - **Active task:** none in progress. P1-11 (server-authoritative rollups, GATE) DONE. **Local headless backend work for Phase 1 is now largely exhausted.**
 - **Next up:** the remaining Phase 1 tasks need the **Next.js frontend** (viewer P1-06 GATE, overlay P1-07, tools P1-09, uploads-client P1-01, undo P1-12) or **worker infra** (ingestion P1-02, raster/tile P1-03, extract P1-04, reports/export P1-13/14). These need P0-05 (app shell) and a worker host — i.e. the user's cloud/GitHub accounts. Good moment to set those up, or get P0-10 estimator sign-off.
-- **Open blockers:** see Section 6 — hosted provisioning, auth provider, and CI/deploy need cloud/GitHub accounts; P0-10 needs estimator sign-off.
-- **Last updated:** 2026-06-14, aarit — P1-10 (Conditions CRUD + validation + per-condition quantity math) DONE; 116 tests green. Added minimal takeoffs table to anchor conditions.
+- **Open blockers:** see Section 6 — GitHub repo now wired (`origin` → aaritch/takeoffs). Still need Vercel + Neon/Upstash/Blob integrations and an OIDC provider for hosted/auth/CI; P0-10 needs estimator sign-off.
+- **Last updated:** 2026-06-15, aarit — GitHub remote configured & main pushed (11 commits). 125 tests green; P1-11 DONE.
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
@@ -181,7 +181,7 @@ Record anything stopping progress. Remove or mark resolved when cleared. Keep ne
 | 2026-06-14 | P1-10 | Added a **minimal `takeoffs` table** (spec §5.3) to anchor conditions; full takeoff lifecycle is a later task. Per-condition quantity math (waste/derived/extended-cost) lives in `conditions/quantities.ts` (pure, on @takeoff/geometry); the persisted rollup over a measurement set is P1-11. `plan_set_id` on takeoffs is nullable until plan sets exist. | P1-10; P1-11 (rollups), takeoff lifecycle |
 | 2026-06-14 | P1-08 | Built the pure `@takeoff/geometry` package ahead of its registry deps (P1-07 viewer) and the P0-10 gate | Risk accepted: geometry/scale/quantity math is pure, UI-free, the foundation P1-09/P1-11 depend on. Package DONE & tested (25 tests incl. metric/imperial calibration, holes, self-intersection, e2e calibrate→quantity). The two-point scale-calibration UI part of P1-08 still waits for the viewer (P1-06/07). | aarit | DONE (pkg) |
 | 2026-06-13 | P0-06 | Started before its dependency P0-05 (identity provider) is DONE | Risk accepted: build accounts domain + RBAC against local Postgres; the authenticated-user identity is abstracted behind an `AuthContext` resolver so P0-05's OIDC/JIT-provisioning plugs in without rework. No live auth needed to build/test the domain. | aarit | ACCEPTED |
-| 2026-06-13 | P0-04 (hosted), P0-05, P0-08 | Cannot provision hosted dev/staging/prod or configure the identity provider without cloud accounts | User to create: Vercel project + Neon/Upstash/Blob integrations; an OIDC/OAuth2 provider; GitHub repo for CI/deploy | aarit | OPEN |
+| 2026-06-15 | P0-04 (hosted), P0-05, P0-08 | Cannot provision hosted dev/staging/prod or configure the identity provider without cloud accounts | ~~GitHub repo~~ DONE (origin = https://github.com/aaritch/takeoffs.git, main pushed). Still needed: Vercel project + Neon/Upstash/Blob integrations; an OIDC/OAuth2 provider. Then connect the repo to Vercel (deploys) + add GitHub Actions (P0-08). | aarit | OPEN (repo done) |
 | - | - | local development is unblocked (docker-compose stack works) | - | - | - |
 
 ---
@@ -216,6 +216,7 @@ Record decisions that future tasks depend on, especially the ones with no single
 Track whether the shared scaffolding actually works, separate from feature progress. A coder resuming cold needs to know what is already standing.
 
 - [x] Repository cloned and builds from clean checkout (P0-01) — `pnpm install && pnpm build` green; lint/format gates verified
+- [x] Git remote configured — `origin` = https://github.com/aaritch/takeoffs.git; `main` tracks `origin/main` (all commits pushed). Future commits push with plain `git push`.
 - [x] Contracts package importable across workspaces (P0-02) — `@takeoff/contracts` (Zod); cross-workspace type resolution verified
 - [~] Dev environment (P0-04): **local** docker-compose stack up & PostGIS spatial column verified (create/insert/drop, reset+up repeatable); **hosted** provisioning (Neon/Upstash/Blob via Vercel) still pending cloud creds
 - [ ] Identity provider configured; login works end to end (P0-05)
