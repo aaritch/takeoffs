@@ -20,8 +20,9 @@ export default function HomePage() {
               <code>@takeoff/ui</code>) is wired up — this card and button are from it.
             </p>
             <Stack direction="row" gap="sm">
-              <Button>Primary</Button>
-              <Button variant="secondary">Secondary</Button>
+              <a href="/dashboard">
+                <Button>Open app</Button>
+              </a>
             </Stack>
           </Stack>
         </Card>
