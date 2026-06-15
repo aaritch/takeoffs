@@ -10,10 +10,10 @@ This is the living state of the build. It is the single place a developer (or co
 ## 1. Current focus
 
 - **Active phase:** Phase 0 — Foundations
-- **Active task:** none in progress. P1-11 (server-authoritative rollups, GATE) DONE. **Local headless backend work for Phase 1 is now largely exhausted.**
-- **Next up:** the remaining Phase 1 tasks need the **Next.js frontend** (viewer P1-06 GATE, overlay P1-07, tools P1-09, uploads-client P1-01, undo P1-12) or **worker infra** (ingestion P1-02, raster/tile P1-03, extract P1-04, reports/export P1-13/14). These need P0-05 (app shell) and a worker host — i.e. the user's cloud/GitHub accounts. Good moment to set those up, or get P0-10 estimator sign-off.
+- **Active task:** P0-05 — **Next.js app shell DONE** (`apps/web` deploys: landing + `/api/health`; `next build` green). Task stays IN_PROGRESS for the OIDC login flow, which needs the identity provider.
+- **Next up:** with the app shell in place, the Phase 1 frontend can begin once auth/data exist — viewer P1-06 (GATE), overlay P1-07, tools P1-09, uploads-client P1-01. These still want the OIDC provider (login) + Neon/Upstash/Blob (data). Or build more UI scaffolding that doesn't need data yet.
 - **Open blockers:** see Section 6 — GitHub repo now wired (`origin` → aaritch/takeoffs). Still need Vercel + Neon/Upstash/Blob integrations and an OIDC provider for hosted/auth/CI; P0-10 needs estimator sign-off.
-- **Last updated:** 2026-06-15, aarit — GitHub remote configured & main pushed (11 commits). 125 tests green; P1-11 DONE.
+- **Last updated:** 2026-06-15, aarit — Next.js app shell built in apps/web (P0-05 app-shell portion); `next build` green, 125 tests pass. Vercel now deployable (see runbook).
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
@@ -67,7 +67,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P0-02 | Contracts package skeleton | P0-01 | no | aarit | DONE |
 | P0-03 | Core enumerations | P0-02 | no | aarit | DONE |
 | P0-04 | Infrastructure for the dev environment | P0-01 | no | aarit | IN_PROGRESS |
-| P0-05 | Identity provider and login flow | P0-04 | no | - | NOT_STARTED |
+| P0-05 | Identity provider and login flow | P0-04 | no | aarit | IN_PROGRESS |
 | P0-06 | Accounts module: orgs, memberships, RBAC | P0-05, P0-03 | no | aarit | DONE |
 | P0-07 | Org-isolation data-access layer | P0-06 | YES | aarit | DONE |
 | P0-08 | CI/CD pipeline | P0-01, P0-04 | no | - | NOT_STARTED |
@@ -181,7 +181,7 @@ Record anything stopping progress. Remove or mark resolved when cleared. Keep ne
 | 2026-06-14 | P1-10 | Added a **minimal `takeoffs` table** (spec §5.3) to anchor conditions; full takeoff lifecycle is a later task. Per-condition quantity math (waste/derived/extended-cost) lives in `conditions/quantities.ts` (pure, on @takeoff/geometry); the persisted rollup over a measurement set is P1-11. `plan_set_id` on takeoffs is nullable until plan sets exist. | P1-10; P1-11 (rollups), takeoff lifecycle |
 | 2026-06-14 | P1-08 | Built the pure `@takeoff/geometry` package ahead of its registry deps (P1-07 viewer) and the P0-10 gate | Risk accepted: geometry/scale/quantity math is pure, UI-free, the foundation P1-09/P1-11 depend on. Package DONE & tested (25 tests incl. metric/imperial calibration, holes, self-intersection, e2e calibrate→quantity). The two-point scale-calibration UI part of P1-08 still waits for the viewer (P1-06/07). | aarit | DONE (pkg) |
 | 2026-06-13 | P0-06 | Started before its dependency P0-05 (identity provider) is DONE | Risk accepted: build accounts domain + RBAC against local Postgres; the authenticated-user identity is abstracted behind an `AuthContext` resolver so P0-05's OIDC/JIT-provisioning plugs in without rework. No live auth needed to build/test the domain. | aarit | ACCEPTED |
-| 2026-06-15 | P0-04 (hosted), P0-05, P0-08 | Cannot provision hosted dev/staging/prod or configure the identity provider without cloud accounts | ~~GitHub repo~~ DONE (origin = https://github.com/aaritch/takeoffs.git). **Vercel connected but deploys PAUSED** — nothing deployable until the Next.js app shell (P0-05) exists; a turbo build only typechecks. See `docs/runbooks/vercel-setup.md`. Still needed: Neon/Upstash/Blob integrations + an OIDC provider; then build the Next.js app shell and enable Vercel. | aarit | OPEN (repo done; Vercel paused) |
+| 2026-06-15 | P0-04 (hosted), P0-05, P0-08 | Hosted provisioning + OIDC login need cloud accounts | ~~GitHub repo~~ DONE. ~~Next.js app shell~~ DONE — `apps/web` is now a deployable Next.js app (`next build` green); configure the Vercel project to deploy (`docs/runbooks/vercel-setup.md`). Still needed: Neon/Upstash/Blob integrations (hosted data) + an OIDC provider (login flow, rest of P0-05). | aarit | OPEN (repo + app shell done) |
 | - | - | local development is unblocked (docker-compose stack works) | - | - | - |
 
 ---
@@ -194,6 +194,7 @@ Record decisions that future tasks depend on, especially the ones with no single
 |------|----------|---------------------|---------|
 | 2026-06-13 | Org isolation: **Postgres RLS** (FORCE) keyed on a per-tx `app.current_org_id`, set via `withOrgScope`; tenant access uses a **non-superuser role** (`takeoff_app` locally) so RLS bites; admin/identity uses the superuser conn. `enable_org_rls(table)` applied per customer-owned table; an introspection **guard test** fails the build if any org_id table lacks RLS. Storage keys namespaced `org/{id}/…`. | P0-07 GATE; P1-* (every customer-owned table must call enable_org_rls); signed-URL scoping → P1-01 |
 | 2026-06-13 | Data layer: **Drizzle ORM + drizzle-kit** (Postgres). RBAC lives in **`@takeoff/auth`**; accounts domain + data layer live in **`apps/web/server`** (framework-agnostic; Next.js wiring added in P0-05) | P0-06. Drizzle chosen over Prisma for first-class PostGIS/custom-type support and Neon-serverless fit. `pg` driver locally; Neon serverless driver added for Vercel later. App code already lands in its final home (`apps/web/server`) so P0-05 only adds Next routes/auth, not a move. | P0-06, P0-07, P1-* (every entity, migrations) |
+| 2026-06-15 | App shell: **Next.js 15 (App Router) + React 19** in `apps/web`; workspace packages via `transpilePackages`; `pg` kept external; ESLint-at-build off (repo ESLint covers it); `next-env.d.ts` gitignored (generated) | P0-05 app-shell. `apps/web` flips from a source-only TS package to a Next app; `build` is now `next build`, `typecheck` stays `tsc --noEmit`. Server domain (`server/`) unchanged, imported by future route handlers. | P0-05 (auth), all Phase 1 frontend |
 | 2026-06-13 | Local dev stack: **docker-compose** with `postgis/postgis:16-3.4`, `redis:7`, **MinIO** (S3-compatible) standing in for Vercel Blob | P0-04 (local portion). Mirrors the hosted data layer so app/workers run end-to-end without cloud accounts; storage adapter makes MinIO↔Blob a config swap. Run via `pnpm dev:up`/`dev:down`/`dev:reset`. PostGIS verified (spatial column create/insert/drop; reset+up repeatable). | P0-05+, P1-* (data layer, geometry) |
 | 2026-06-13 | Contract validation: **Zod**; internal packages are **source-consumed** (exports → `src/index.ts`, no emit); tests via **Vitest** | P0-02. Zod gives runtime validation + inferred static types from one definition. Source consumption (Next.js transpiles; workers built with tsup/tsx) avoids the ESM-extension footgun — `build`/`typecheck` = `tsc --noEmit`. Source packages add a local `turbo.json` (`"extends": ["//"]`, empty `outputs`) to silence Turbo's no-output warnings. | P0-03+ (all contract shapes); every TS package |
 | 2026-06-13 | Workspace tooling: **pnpm 9 workspaces + Turborepo 2**; ESLint 9 flat config + Prettier 3; internal scope `@takeoff/*` | P0-01. Canonical Vercel monorepo. Cross-package deep imports blocked by ESLint `no-restricted-imports` now. **Gotcha:** `corepack enable` fails on this Windows box (EPERM writing to `C:\Program Files\nodejs`) — pnpm was installed via `npm i -g pnpm@9.15.4` into the user prefix instead. Use that, not corepack, here. | P0-02+ (all TS packages/apps) |
@@ -219,7 +220,7 @@ Track whether the shared scaffolding actually works, separate from feature progr
 - [x] Git remote configured — `origin` = https://github.com/aaritch/takeoffs.git; `main` tracks `origin/main` (all commits pushed). Future commits push with plain `git push`.
 - [x] Contracts package importable across workspaces (P0-02) — `@takeoff/contracts` (Zod); cross-workspace type resolution verified
 - [~] Dev environment (P0-04): **local** docker-compose stack up & PostGIS spatial column verified (create/insert/drop, reset+up repeatable); **hosted** provisioning (Neon/Upstash/Blob via Vercel) still pending cloud creds
-- [ ] Identity provider configured; login works end to end (P0-05)
+- [~] Next.js app shell built & deployable (P0-05); identity provider + login flow still pending an OIDC provider
 - [ ] CI runs lint, tests, build, and deploys to staging (P0-08)
 - [ ] Correlation id traces a request across services (P0-09)
 - [ ] GPU worker pool provisioned and scales to zero (P2-02)

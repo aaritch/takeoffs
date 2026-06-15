@@ -1,16 +1,10 @@
 # Runbook: Vercel deployment setup
 
-**Status: PAUSED.** Vercel is connected to the repo but there is **nothing deployable yet** —
-`apps/web` is currently the backend domain layer only (no Next.js app, no routes/pages, no
-`next` dependency). `pnpm run build` runs `turbo run build`, which only **typechecks**
-(`tsc --noEmit`) and emits no output, so a Vercel build will fail at the "no output directory"
-step (or publish an empty site).
-
-**Do not enable Vercel deploys until the Next.js app shell exists (task P0-05).** To stop the
-failing builds in the meantime, either disconnect the Git integration or set
-Settings → Git → **Ignored Build Step** to exit 0 (e.g. `exit 0`).
-
-When `apps/web` is a real Next.js app, configure the project as below.
+**Status: DEPLOYABLE (configure when ready).** `apps/web` is now a Next.js (App Router) app
+— `next build` produces output (a landing page, a `/_not-found`, and `/api/health`). Configure
+the Vercel project per the steps below to deploy. The app shell does **not** need any cloud
+credentials; the OIDC login flow and feature pages are added later (rest of P0-05 / Phase 1
+frontend).
 
 ## 1. Prerequisite
 
@@ -19,8 +13,8 @@ When `apps/web` is a real Next.js app, configure the project as below.
 
 ## 2. Project settings (Vercel dashboard → Project → Settings)
 
-- **Root Directory:** `apps/web`. Turn ON *"Include source files outside of the Root
-  Directory in the Build Step"* so the workspace packages (`packages/*`) resolve.
+- **Root Directory:** `apps/web`. Turn ON _"Include source files outside of the Root
+  Directory in the Build Step"_ so the workspace packages (`packages/*`) resolve.
 - **Framework Preset:** Next.js (auto-detected once `next` is a dependency).
 - **Build Command:** default `next build` works with Root Directory set; for Turborepo
   caching prefer `pnpm turbo run build --filter=@takeoff/web...` from the repo root.

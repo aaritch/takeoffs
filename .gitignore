@@ -8,6 +8,8 @@ build-output/
 .next/
 out/
 *.tsbuildinfo
+# Next.js generates this per build/dev (references generated .next types)
+next-env.d.ts
 
 # Turbo
 .turbo/
