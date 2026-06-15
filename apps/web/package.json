@@ -20,6 +20,7 @@
     "@takeoff/auth": "workspace:*",
     "@takeoff/contracts": "workspace:*",
     "@takeoff/geometry": "workspace:*",
+    "@takeoff/ui": "workspace:*",
     "drizzle-orm": "^0.38.3",
     "next": "^15.1.6",
     "pg": "^8.13.1",

@@ -1,0 +1,95 @@
+/* Design-system tokens (CSS custom properties) + primitive component styles. Import once at the
+   app root: `import '@takeoff/ui/styles.css'`. Keep the :root values in sync with tokens.ts. */
+:root {
+  --tk-color-fg: #1a1a1a;
+  --tk-color-muted: #6b7280;
+  --tk-color-bg: #ffffff;
+  --tk-color-primary: #2563eb;
+  --tk-color-primary-fg: #ffffff;
+  --tk-color-border: #e5e7eb;
+  --tk-color-danger: #dc2626;
+
+  --tk-space-xs: 0.25rem;
+  --tk-space-sm: 0.5rem;
+  --tk-space-md: 1rem;
+  --tk-space-lg: 1.5rem;
+  --tk-space-xl: 2rem;
+
+  --tk-radius-sm: 0.25rem;
+  --tk-radius-md: 0.5rem;
+  --tk-radius-lg: 0.75rem;
+}
+
+/* Button */
+.tk-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--tk-space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--tk-radius-md);
+  font: inherit;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+}
+.tk-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tk-button--sm {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.875rem;
+}
+.tk-button--md {
+  padding: 0.5rem 1rem;
+}
+.tk-button--primary {
+  background: var(--tk-color-primary);
+  color: var(--tk-color-primary-fg);
+}
+.tk-button--primary:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+.tk-button--secondary {
+  background: var(--tk-color-bg);
+  color: var(--tk-color-fg);
+  border-color: var(--tk-color-border);
+}
+.tk-button--ghost {
+  background: transparent;
+  color: var(--tk-color-fg);
+}
+
+/* Card */
+.tk-card {
+  border: 1px solid var(--tk-color-border);
+  border-radius: var(--tk-radius-md);
+  padding: var(--tk-space-lg);
+  background: var(--tk-color-bg);
+}
+.tk-card__title {
+  margin: 0 0 var(--tk-space-sm);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+/* Badge */
+.tk-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--tk-color-border);
+  color: var(--tk-color-fg);
+}
+.tk-badge--primary {
+  background: var(--tk-color-primary);
+  color: var(--tk-color-primary-fg);
+}
+.tk-badge--danger {
+  background: var(--tk-color-danger);
+  color: #fff;
+}

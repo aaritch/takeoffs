@@ -1,0 +1,36 @@
+{
+  "name": "@takeoff/ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Design system: tokens, primitive components, and viewer primitives (later). Source-consumed React; transpiled by the Next app.",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.1.0",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "jsdom": "^25.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vitest": "^2.1.9"
+  }
+}
