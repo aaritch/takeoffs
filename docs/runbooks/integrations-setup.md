@@ -62,23 +62,33 @@ RLS only enforces when the app connects as a **non-superuser** role, so use two 
 2. Copy the **`rediss://` connection URL** → `REDIS_URL`. (We use `ioredis`, which speaks the
    Redis protocol; the REST API token isn't needed.)
 
-## 4. Object storage (S3-compatible)
+## 4. Object storage — Cloudflare R2 (S3-compatible)
 
-Use Cloudflare R2 or AWS S3 in prod (MinIO is the local stand-in). The app uses S3-style
-presigned URLs for direct uploads (spec §10.2).
+R2 speaks the S3 API, so the existing `S3Storage` adapter works unchanged; MinIO is the local
+stand-in. The app uses S3-style presigned URLs for direct uploads (spec §10.2).
 
-1. Create a bucket.
-2. Create an access key / secret with read+write on the bucket.
-3. Configure **CORS** to allow `PUT` (and `GET`) from your app origin (needed for direct
-   browser uploads).
+1. In the Cloudflare dashboard → **R2** → create a bucket (e.g. `takeoff`). Note your
+   **Account ID** (R2 endpoint is `https://<account_id>.r2.cloudflarestorage.com`).
+2. **R2 → Manage API Tokens → Create API token** with *Object Read & Write* on the bucket.
+   This gives an **Access Key ID** and **Secret Access Key** (S3 credentials).
+3. Configure **CORS** on the bucket (R2 settings) to allow `GET` and `PUT` from your app
+   origin — required for direct browser uploads:
+   ```json
+   [{ "AllowedOrigins": ["https://your-app", "http://localhost:3000"],
+      "AllowedMethods": ["GET", "PUT"],
+      "AllowedHeaders": ["*"], "MaxAgeSeconds": 3600 }]
+   ```
 4. Env:
    ```
-   S3_ENDPOINT=<R2/MinIO endpoint; omit for AWS S3>
-   S3_REGION=<region; 'auto' for R2>
-   S3_BUCKET=<bucket>
-   S3_ACCESS_KEY_ID=<key>
-   S3_SECRET_ACCESS_KEY=<secret>
+   S3_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com
+   S3_REGION=auto
+   S3_BUCKET=takeoff
+   S3_ACCESS_KEY_ID=<R2 access key id>
+   S3_SECRET_ACCESS_KEY=<R2 secret access key>
    ```
+
+> The adapter already forces path-style addressing when an endpoint is set, which R2 supports.
+> No code changes needed — only these env vars.
 
 ## 5. Wire into Vercel
 
