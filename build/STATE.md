@@ -13,7 +13,7 @@ This is the living state of the build. It is the single place a developer (or co
 - **Active task:** P0-05 — **Next.js app shell DONE** (`apps/web` deploys: landing + `/api/health`; `next build` green). Task stays IN_PROGRESS for the OIDC login flow, which needs the identity provider.
 - **Next up:** with the app shell in place, the Phase 1 frontend can begin once auth/data exist — viewer P1-06 (GATE), overlay P1-07, tools P1-09, uploads-client P1-01. These still want the OIDC provider (login) + Neon/Upstash/Blob (data). Or build more UI scaffolding that doesn't need data yet.
 - **Open blockers:** see Section 6 — GitHub repo now wired (`origin` → aaritch/takeoffs). Still need Vercel + Neon/Upstash/Blob integrations and an OIDC provider for hosted/auth/CI; P0-10 needs estimator sign-off.
-- **Last updated:** 2026-06-15, aarit — wired OIDC (Auth.js v5), Redis (ioredis), and S3-compatible storage; JIT provisioning; route-gating middleware. 137 tests green (storage/redis/provisioning tested vs local services). Account setup is all that remains — `docs/runbooks/integrations-setup.md`.
+- **Last updated:** 2026-06-15, aarit — added a create-project form on /projects: client form on @takeoff/ui primitives validating the shared `CreateProjectRequest` contract (same schema the API will use); submit shows a labeled preview (no persistence until API+auth). 137 tests green.
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
