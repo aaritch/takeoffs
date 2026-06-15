@@ -13,7 +13,7 @@ This is the living state of the build. It is the single place a developer (or co
 - **Active task:** P0-05 — **Next.js app shell DONE** (`apps/web` deploys: landing + `/api/health`; `next build` green). Task stays IN_PROGRESS for the OIDC login flow, which needs the identity provider.
 - **Next up:** with the app shell in place, the Phase 1 frontend can begin once auth/data exist — viewer P1-06 (GATE), overlay P1-07, tools P1-09, uploads-client P1-01. These still want the OIDC provider (login) + Neon/Upstash/Blob (data). Or build more UI scaffolding that doesn't need data yet.
 - **Open blockers:** see Section 6 — GitHub repo now wired (`origin` → aaritch/takeoffs). Still need Vercel + Neon/Upstash/Blob integrations and an OIDC provider for hosted/auth/CI; P0-10 needs estimator sign-off.
-- **Last updated:** 2026-06-15, aarit — app layout + nav shell built (`app/(app)` route group: topbar + active-aware sidebar + dashboard/projects/reports/orders/billing stubs) on @takeoff/ui. 130 tests green; `next build` compiles all routes.
+- **Last updated:** 2026-06-15, aarit — form primitives added to @takeoff/ui (Field + Input/Textarea/Select/Checkbox, a11y-wired, invalid states). 132 tests green. Frontend scaffolding ready for create-project/condition forms.
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 

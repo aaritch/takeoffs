@@ -32,6 +32,8 @@ import { Button, Card, Badge, Stack, tokens } from '@takeoff/ui';
 - **`cn(...)`** — tiny classnames helper.
 - **`Button`** (variant: primary/secondary/ghost, size: sm/md), **`Card`** (optional title),
   **`Badge`** (tone: neutral/primary/danger), **`Stack`** (row/column + token gap).
+- **Forms:** **`Field`** (label + hint + error, with a11y wiring), **`Input`**, **`Textarea`**,
+  **`Select`**, **`Checkbox`** (all support an `invalid` state via `aria-invalid`).
 
 Components are presentational (class-name based; styles live in `styles.css`) so they render in
 both server and client components. Tests run under jsdom via Vitest.

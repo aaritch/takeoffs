@@ -75,6 +75,61 @@
   font-weight: 600;
 }
 
+/* Forms */
+.tk-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tk-space-xs);
+}
+.tk-field__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.tk-field__required {
+  color: var(--tk-color-danger);
+}
+.tk-field__hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--tk-color-muted);
+}
+.tk-field__error {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--tk-color-danger);
+}
+
+.tk-input,
+.tk-textarea,
+.tk-select {
+  font: inherit;
+  color: var(--tk-color-fg);
+  background: var(--tk-color-bg);
+  border: 1px solid var(--tk-color-border);
+  border-radius: var(--tk-radius-md);
+  padding: 0.5rem 0.625rem;
+  width: 100%;
+}
+.tk-input:focus-visible,
+.tk-textarea:focus-visible,
+.tk-select:focus-visible {
+  outline: 2px solid var(--tk-color-primary);
+  outline-offset: 1px;
+}
+.tk-input[aria-invalid='true'],
+.tk-textarea[aria-invalid='true'],
+.tk-select[aria-invalid='true'] {
+  border-color: var(--tk-color-danger);
+}
+.tk-textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+.tk-checkbox {
+  width: 1rem;
+  height: 1rem;
+}
+
 /* Badge */
 .tk-badge {
   display: inline-block;
