@@ -81,6 +81,28 @@ export const accountsService = {
   },
 
   /**
+   * Just-in-time provisioning from a verified identity-provider login (P0-05): find-or-create the
+   * user by email, ensure ACTIVE, and record the provider subject + last-seen. The OIDC callback
+   * calls this on every sign-in. Idempotent.
+   */
+  async provisionFromIdentity(
+    db: DB,
+    identity: { email: string; fullName?: string; subject?: string },
+  ): Promise<User> {
+    const user = await findOrCreateUser(db, identity.email, 'ACTIVE', {
+      ...(identity.fullName ? { full_name: identity.fullName } : {}),
+      ...(identity.subject ? { auth_provider_subject: identity.subject } : {}),
+    });
+    if (user.status !== 'ACTIVE') {
+      await repo.setUserStatus(db, user.id, 'ACTIVE');
+    }
+    await repo.touchUser(db, user.id, {
+      ...(identity.subject ? { auth_provider_subject: identity.subject } : {}),
+    });
+    return (await repo.getUserById(db, user.id)) ?? user;
+  },
+
+  /**
    * Invite a member. Requires `members:manage`. Creates the user (INVITED) if new. Seat limits
    * are NOT enforced here — they are enforced at acceptance (spec §6.1).
    */

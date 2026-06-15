@@ -51,6 +51,24 @@ export const repo = {
     await db.update(users).set({ status, updated_at: new Date() }).where(eq(users.id, userId));
   },
 
+  /** Update identity fields on each login (provider subject, last-seen). */
+  async touchUser(
+    db: DB,
+    userId: string,
+    patch: { auth_provider_subject?: string },
+  ): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        ...(patch.auth_provider_subject
+          ? { auth_provider_subject: patch.auth_provider_subject }
+          : {}),
+        last_seen_at: new Date(),
+        updated_at: new Date(),
+      })
+      .where(eq(users.id, userId));
+  },
+
   // --- memberships ---
   async insertMembership(db: DB, values: typeof memberships.$inferInsert): Promise<Membership> {
     const [row] = await db.insert(memberships).values(values).returning();

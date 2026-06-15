@@ -227,3 +227,23 @@ describe('last-owner protection', () => {
     expect(demoted.role).toBe('ADMIN');
   });
 });
+
+describe('provisionFromIdentity (JIT login)', () => {
+  it('creates an active user, normalizes email, records the subject, and is idempotent', async () => {
+    const first = await accountsService.provisionFromIdentity(db(), {
+      email: 'New.User@acme.test',
+      fullName: 'New User',
+      subject: 'oidc|123',
+    });
+    expect(first.status).toBe('ACTIVE');
+    expect(first.email).toBe('new.user@acme.test');
+    expect(first.auth_provider_subject).toBe('oidc|123');
+    expect(first.last_seen_at).not.toBeNull();
+
+    const again = await accountsService.provisionFromIdentity(db(), {
+      email: 'new.user@acme.test',
+      subject: 'oidc|123',
+    });
+    expect(again.id).toBe(first.id);
+  });
+});

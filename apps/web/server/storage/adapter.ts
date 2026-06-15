@@ -1,0 +1,26 @@
+/** A time-limited signed URL for a single object. */
+export interface SignedUrl {
+  url: string;
+  expiresInSeconds: number;
+}
+
+export interface SignedUrlOptions {
+  expiresInSeconds?: number;
+  contentType?: string;
+}
+
+/**
+ * Object-storage operations the app depends on. Implemented by S3Storage (S3-compatible:
+ * MinIO locally, Cloudflare R2 / AWS S3 in prod). Keys MUST be built via the org-namespacing
+ * helpers in `keys.ts` so storage isolation mirrors database isolation (P0-07).
+ */
+export interface StorageAdapter {
+  putObject(key: string, body: Uint8Array | string, contentType?: string): Promise<void>;
+  /** Signed URL the client PUTs a file to directly (spec §10.2 direct-to-storage uploads). */
+  getSignedUploadUrl(key: string, options?: SignedUrlOptions): Promise<SignedUrl>;
+  /** Signed, expiring URL to read a single object (reports/tiles delivery). */
+  getSignedDownloadUrl(key: string, options?: SignedUrlOptions): Promise<SignedUrl>;
+  deleteObject(key: string): Promise<void>;
+}
+
+export const DEFAULT_SIGNED_URL_TTL_SECONDS = 900; // 15 minutes

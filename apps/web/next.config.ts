@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@takeoff/contracts', '@takeoff/auth', '@takeoff/geometry', '@takeoff/ui'],
   // Keep the Postgres driver external — it's only used in server route handlers (Node runtime),
   // never bundled for the client.
-  serverExternalPackages: ['pg'],
+  serverExternalPackages: ['pg', 'ioredis'],
   // Linting is run by the repo-wide ESLint config in CI, not during the Next build.
   eslint: { ignoreDuringBuilds: true },
 };
