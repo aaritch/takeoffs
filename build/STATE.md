@@ -13,7 +13,7 @@ This is the living state of the build. It is the single place a developer (or co
 - **Active task:** P0-05 — **Next.js app shell DONE** (`apps/web` deploys: landing + `/api/health`; `next build` green). Task stays IN_PROGRESS for the OIDC login flow, which needs the identity provider.
 - **Next up:** with the app shell in place, the Phase 1 frontend can begin once auth/data exist — viewer P1-06 (GATE), overlay P1-07, tools P1-09, uploads-client P1-01. These still want the OIDC provider (login) + Neon/Upstash/Blob (data). Or build more UI scaffolding that doesn't need data yet.
 - **Open blockers:** see Section 6 — GitHub repo now wired (`origin` → aaritch/takeoffs). Still need Vercel + Neon/Upstash/Blob integrations and an OIDC provider for hosted/auth/CI; P0-10 needs estimator sign-off.
-- **Last updated:** 2026-06-17, aarit — **Hosted data layer LIVE: Neon + Upstash + R2 all provisioned, wired, and verified.** Neon & Upstash provisioned via **Vercel Marketplace** (`vercel integration add neon` / `upstash/upstash-kv`), connected to the `takeoffs` project, env pulled to `.env.local` and set across all Vercel envs. Neon initialized: PostGIS on, **`takeoff_app`** non-superuser/NOBYPASSRLS role created, migrated + seeded (6 trade categories), `APP_DATABASE_URL` built + pushed to Vercel. **Org-isolation verified on live Neon** (`verify-app-role`: rolbypassrls=false, `projects` returns 0 rows without org ctx — fails closed). Upstash round-trip OK. New reusable tooling: `db:bootstrap`, `db:check`, `db:verify-role`, `redis:check`. R2 still live (`storage:check` green). **Remaining for full hosted go-live: OIDC provider (P0-05), then deploy.**
+- **Last updated:** 2026-06-17, aarit — **All Phase-0 hosted integrations LIVE: Neon + Upstash + R2 + OIDC.** OIDC done via **Microsoft Entra ID** (Azure CLI): single-tenant app registration "Takeoff Platform" (client `5b340884…`, tenant `864774d8…`) with local+prod redirect URIs, `email`/`preferred_username` optional id-token claims, client secret minted; `AUTH_*` wired into `.env.local` + Vercel (all envs; `AUTH_URL` prod-only). **Login flow verified end-to-end** (dev server: `/api/health` → auth:true; sign-in 302s to Entra authorize with correct client_id, redirect_uri, PKCE, scope=openid profile email) — only a human browser login remains to confirm JIT provisioning. Neon/Upstash/R2 all provisioned + verified earlier today. **Next: P0-08 CI/CD, then first hosted deploy; or resume Phase-1 frontend.**
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 
@@ -59,15 +59,15 @@ Other conventions:
 
 Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status as you work. Keep Task and Depends-on as written so cross-references stay valid.
 
-### Phase 0 — Foundations  (progress: 5/10 DONE)
+### Phase 0 — Foundations  (progress: 7/10 DONE)
 
 | ID | Task | Depends on | Gate | Owner | Status |
 |----|------|-----------|------|-------|--------|
 | P0-01 | Monorepo and workspace tooling | none | no | aarit | DONE |
 | P0-02 | Contracts package skeleton | P0-01 | no | aarit | DONE |
 | P0-03 | Core enumerations | P0-02 | no | aarit | DONE |
-| P0-04 | Infrastructure for the dev environment | P0-01 | no | aarit | IN_PROGRESS |
-| P0-05 | Identity provider and login flow | P0-04 | no | aarit | IN_PROGRESS |
+| P0-04 | Infrastructure for the dev environment | P0-01 | no | aarit | DONE |
+| P0-05 | Identity provider and login flow | P0-04 | no | aarit | DONE |
 | P0-06 | Accounts module: orgs, memberships, RBAC | P0-05, P0-03 | no | aarit | DONE |
 | P0-07 | Org-isolation data-access layer | P0-06 | YES | aarit | DONE |
 | P0-08 | CI/CD pipeline | P0-01, P0-04 | no | - | NOT_STARTED |
@@ -148,7 +148,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P5-05 | Cloud-storage import | none | no | - | NOT_STARTED |
 | P5-06 | Security review and penetration test | P0-07 | no | - | NOT_STARTED |
 
-**Totals:** 59 tasks. 7 DONE / 2 IN_PROGRESS / 1 IN_REVIEW / 0 BLOCKED / 49 NOT_STARTED. Update these counts as you go.
+**Totals:** 59 tasks. 9 DONE / 1 IN_PROGRESS / 1 IN_REVIEW / 0 BLOCKED / 48 NOT_STARTED. Update these counts as you go.
 
 ---
 
@@ -181,7 +181,7 @@ Record anything stopping progress. Remove or mark resolved when cleared. Keep ne
 | 2026-06-14 | P1-10 | Added a **minimal `takeoffs` table** (spec §5.3) to anchor conditions; full takeoff lifecycle is a later task. Per-condition quantity math (waste/derived/extended-cost) lives in `conditions/quantities.ts` (pure, on @takeoff/geometry); the persisted rollup over a measurement set is P1-11. `plan_set_id` on takeoffs is nullable until plan sets exist. | P1-10; P1-11 (rollups), takeoff lifecycle |
 | 2026-06-14 | P1-08 | Built the pure `@takeoff/geometry` package ahead of its registry deps (P1-07 viewer) and the P0-10 gate | Risk accepted: geometry/scale/quantity math is pure, UI-free, the foundation P1-09/P1-11 depend on. Package DONE & tested (25 tests incl. metric/imperial calibration, holes, self-intersection, e2e calibrate→quantity). The two-point scale-calibration UI part of P1-08 still waits for the viewer (P1-06/07). | aarit | DONE (pkg) |
 | 2026-06-13 | P0-06 | Started before its dependency P0-05 (identity provider) is DONE | Risk accepted: build accounts domain + RBAC against local Postgres; the authenticated-user identity is abstracted behind an `AuthContext` resolver so P0-05's OIDC/JIT-provisioning plugs in without rework. No live auth needed to build/test the domain. | aarit | ACCEPTED |
-| 2026-06-15 | P0-05, P0-08 | OIDC login needs a cloud identity provider | ~~GitHub~~, ~~app shell~~, ~~integration wiring~~, ~~R2~~, ~~Neon (+ takeoff_app role, PostGIS, migrate/seed)~~, ~~Upstash~~ all DONE & verified on live infra; env set in Vercel (Prod/Preview/Dev). **Only remaining blocker: provision an OIDC provider** (Auth0/Logto/Entra/etc.), set `AUTH_*` in Vercel, then the hosted app can deploy with login. Runbook §1. | aarit | OPEN (OIDC provider only) |
+| 2026-06-15 | (resolved) | All Phase-0 cloud integrations now provisioned | ~~GitHub~~, ~~app shell~~, ~~integration wiring~~, ~~R2~~, ~~Neon~~, ~~Upstash~~, ~~OIDC (Entra ID)~~ — all DONE & verified; `AUTH_*` + data env set in Vercel (Prod/Preview/Dev). Hosted app is deployable. Remaining cloud item is a P0-08 concern (CI deploy gating), not a blocker. | aarit | RESOLVED 2026-06-17 |
 | - | - | local development is unblocked (docker-compose stack works) | - | - | - |
 
 ---
@@ -194,6 +194,7 @@ Record decisions that future tasks depend on, especially the ones with no single
 |------|----------|---------------------|---------|
 | 2026-06-13 | Org isolation: **Postgres RLS** (FORCE) keyed on a per-tx `app.current_org_id`, set via `withOrgScope`; tenant access uses a **non-superuser role** (`takeoff_app` locally) so RLS bites; admin/identity uses the superuser conn. `enable_org_rls(table)` applied per customer-owned table; an introspection **guard test** fails the build if any org_id table lacks RLS. Storage keys namespaced `org/{id}/…`. | P0-07 GATE; P1-* (every customer-owned table must call enable_org_rls); signed-URL scoping → P1-01 |
 | 2026-06-13 | Data layer: **Drizzle ORM + drizzle-kit** (Postgres). RBAC lives in **`@takeoff/auth`**; accounts domain + data layer live in **`apps/web/server`** (framework-agnostic; Next.js wiring added in P0-05) | P0-06. Drizzle chosen over Prisma for first-class PostGIS/custom-type support and Neon-serverless fit. `pg` driver locally; Neon serverless driver added for Vercel later. App code already lands in its final home (`apps/web/server`) so P0-05 only adds Next routes/auth, not a move. | P0-06, P0-07, P1-* (every entity, migrations) |
+| 2026-06-17 | OIDC identity provider: **Microsoft Entra ID** (single-tenant app registration "Takeoff Platform") | User is on Azure; Entra is a standards-compliant OIDC provider that works with our generic Auth.js `oidc` provider (issuer = `https://login.microsoftonline.com/<tenant>/v2.0`, discovery issuer matches exactly). Set up via **Azure CLI** (`az ad app create` + `credential reset`), not browser. Single-tenant (`AzureADMyOrg`) = only the Default Directory's users sign in — fine for setup/managed-service; switch to `AzureADMultipleOrgs` if external contractors with their own MS orgs must log in. Added `email`+`preferred_username` optional id-token claims because Entra omits `email` by default and our JIT provisioning needs it. Tenant is a **personal-account Default Directory** (`864774d8…`) — revisit if a work tenant becomes preferred. | P0-05, P5-02 (SSO/MFA), all authed routes |
 | 2026-06-17 | Hosted data layer provisioned via **Vercel Marketplace**: **Neon Postgres** (Postgres 17 + PostGIS 3.5) and **Upstash for Redis**, both connected to the `takeoffs` project | `vercel integration add neon` / `upstash/upstash-kv` auto-creates the resources, injects env across all envs, and pulls to `.env.local`. Neon owner (`neondb_owner`) has `rolbypassrls=true`, so a separate **`takeoff_app`** (NOSUPERUSER NOBYPASSRLS) role is the tenant connection (`APP_DATABASE_URL`); `db:bootstrap` automates PostGIS + role + grants idempotently (note: re-runs must not re-assert NOSUPERUSER/NOBYPASSRLS — Neon rejects attribute changes by non-superusers). Org-isolation proven on live Neon via `db:verify-role`. | P0-04 (hosted), P0-05, P1-* (all hosted data) |
 | 2026-06-15 | Object storage (prod): **Cloudflare R2** | User is on Azure, but Azure Blob is NOT S3-compatible; R2 is genuinely S3-compatible so the existing `S3Storage` adapter works unchanged (endpoint = `https://<acct>.r2.cloudflarestorage.com`, region `auto`, path-style). MinIO stays the local stand-in. No code change — config only; see `docs/runbooks/integrations-setup.md` §4. | P1-01 (uploads), storage env |
 | 2026-06-15 | Integrations wired (P0-05 + infra): **Auth.js v5 generic OIDC** (JIT user provisioning, JWT session, edge middleware gating the `(app)` routes; disabled when `AUTH_ISSUER_URL` unset), **ioredis** Redis client, and an **S3-compatible storage adapter** (presigned upload/download, tested vs local MinIO). **Storage choice changed: Vercel Blob → S3-compatible** (R2/S3/MinIO) — matches the spec's presigned-upload model + local parity; supersedes the 2026-06-13 Blob decision. Account setup pending — see `docs/runbooks/integrations-setup.md`. | P0-05, P1-01 (uploads), all data/auth |
@@ -224,7 +225,7 @@ Track whether the shared scaffolding actually works, separate from feature progr
 - [x] Git remote configured — `origin` = https://github.com/aaritch/takeoffs.git; `main` tracks `origin/main` (all commits pushed). Future commits push with plain `git push`.
 - [x] Contracts package importable across workspaces (P0-02) — `@takeoff/contracts` (Zod); cross-workspace type resolution verified
 - [~] Dev environment (P0-04): **local** docker-compose stack up & PostGIS spatial column verified; **hosted** now LIVE — **Neon Postgres** (PostGIS, `takeoff_app` RLS role, migrated+seeded, org-isolation proven on the live DB), **Upstash Redis** (round-trip OK), **Cloudflare R2** (round-trip OK). All env vars (`DATABASE_URL`, `APP_DATABASE_URL`, `REDIS_URL`, `S3_*`) set in Vercel across Prod/Preview/Dev and pulled to `.env.local`. **Note:** `.env.local` (vercel pull) points local `pnpm dev` at HOSTED services and overrides `.env` — rename/remove it to develop against the local docker stack. Only OIDC provisioning still pending.
-- [~] Next.js app shell + **Auth.js OIDC wiring** built (P0-05): JIT provisioning, JWT session, middleware route-gating, sign-in/out UI. Needs only an OIDC provider's creds to go live. Redis (ioredis) + S3 storage adapter also wired & tested vs local services.
+- [x] Next.js app shell + **Auth.js OIDC LIVE** (P0-05): JIT provisioning, JWT session, middleware route-gating, sign-in/out UI — wired to **Microsoft Entra ID** (single-tenant app reg). Verified: sign-in 302s to Entra authorize with correct client_id/redirect_uri/PKCE/scope; `/api/health` auth:true. Redis + S3 also live. (Final human confirmation: complete one browser login.)
 - [ ] CI runs lint, tests, build, and deploys to staging (P0-08)
 - [ ] Correlation id traces a request across services (P0-09)
 - [ ] GPU worker pool provisioned and scales to zero (P2-02)

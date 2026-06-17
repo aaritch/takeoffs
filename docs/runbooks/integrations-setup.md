@@ -8,25 +8,52 @@ env vars (locally in `.env`, and in the Vercel project for hosted). Full annotat
 
 ## 1. OIDC provider (Auth.js / NextAuth v5, generic OIDC)
 
-Pick any compliant provider — Auth0, Logto (generous free tier), Keycloak (self-host),
-Microsoft Entra, Google, etc. Then:
+The app uses one **generic OIDC provider** (id `oidc`), so any compliant IdP works. The live
+setup uses **Microsoft Entra ID**, provisioned via the **Azure CLI** (no browser app config).
 
-1. Create an application/client of type **Web / Authorization Code**.
-2. Set the **allowed callback URL** to `${AUTH_URL}/api/auth/callback/oidc`
-   (local: `http://localhost:3000/api/auth/callback/oidc`).
-3. Set the **sign-out / allowed return URL** to your app origin.
-4. Copy the **issuer URL**, **client id**, **client secret**.
-5. Env:
-   ```
-   AUTH_ISSUER_URL=<issuer>
-   AUTH_CLIENT_ID=<client id>
-   AUTH_CLIENT_SECRET=<client secret>
-   AUTH_SECRET=<openssl rand -base64 32>
-   AUTH_URL=<app origin>            # http://localhost:3000 locally; your domain in prod
-   ```
+**Live path — Microsoft Entra ID via Azure CLI:**
 
-> Leaving `AUTH_ISSUER_URL` empty disables auth and route-gating (handy for local dev). On
-> first login the user is just-in-time provisioned into the `users` table.
+```
+# Prereq: Azure CLI installed (winget install Microsoft.AzureCLI) and `az login` to the target tenant.
+
+# 1. Create a single-tenant app registration with the local + prod redirect URIs:
+az ad app create --display-name "Takeoff Platform" --sign-in-audience AzureADMyOrg \
+  --web-redirect-uris "http://localhost:3000/api/auth/callback/oidc" \
+                      "https://<your-app>.vercel.app/api/auth/callback/oidc"
+#   → note the appId (client id) and id (object id)
+
+# 2. Emit email in the id token (Entra omits it by default; JIT provisioning needs it):
+az rest --method PATCH --uri "https://graph.microsoft.com/v1.0/applications/<objectId>" \
+  --headers "Content-Type=application/json" \
+  --body '{"optionalClaims":{"idToken":[{"name":"email"},{"name":"preferred_username"}]}}'
+
+# 3. Mint a client secret (capture `password` — it is shown once):
+az ad app credential reset --id <appId> --display-name "takeoff-web" --years 2
+```
+
+Then set env (issuer = the tenant's v2.0 endpoint):
+
+```
+AUTH_ISSUER_URL=https://login.microsoftonline.com/<tenant-id>/v2.0
+AUTH_CLIENT_ID=<appId>
+AUTH_CLIENT_SECRET=<password from step 3>
+AUTH_SECRET=<openssl rand -base64 32>         # or PowerShell RNG → base64(32 bytes)
+AUTH_URL=<app origin>                          # http://localhost:3000 locally; prod domain in prod
+```
+
+Verify (with the dev server running): `GET /api/auth/providers` lists `oidc`; a POST to
+`/api/auth/signin/oidc` (with the `/api/auth/csrf` token) 302s to the Entra `authorize`
+endpoint carrying the right `client_id`, `redirect_uri`, PKCE, and `scope=openid profile email`.
+
+> **Other providers** (Auth0, Logto, Keycloak, Google…): create a Web / Authorization-Code
+> client, set the callback to `${AUTH_URL}/api/auth/callback/oidc`, and fill the same five env
+> vars from the provider's issuer/client id/secret.
+>
+> **Notes:** Single-tenant (`AzureADMyOrg`) restricts sign-in to your Entra directory; use
+> `AzureADMultipleOrgs` for external orgs. Preview deploys have dynamic URLs that won't match a
+> fixed redirect URI, so OIDC login is for local + the stable prod domain. Leaving
+> `AUTH_ISSUER_URL` empty disables auth + route-gating (handy for local dev). On first login the
+> user is just-in-time provisioned into the `users` table.
 
 ## 2. Neon Postgres (+ PostGIS) — TWO roles
 
