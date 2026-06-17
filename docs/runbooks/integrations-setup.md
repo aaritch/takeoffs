@@ -30,37 +30,60 @@ Microsoft Entra, Google, etc. Then:
 
 ## 2. Neon Postgres (+ PostGIS) — TWO roles
 
-RLS only enforces when the app connects as a **non-superuser** role, so use two connections:
+RLS only enforces when the app connects as a **non-superuser, NOBYPASSRLS** role, so use two
+connections: the Neon **owner** (`DATABASE_URL`, for migrations/admin — note Neon's owner has
+`rolbypassrls=true`, so it must NOT be the tenant connection) and a dedicated **`takeoff_app`**
+role (`APP_DATABASE_URL`, for all org-scoped data access).
 
-1. Create a Neon project + database. Enable PostGIS once: `CREATE EXTENSION IF NOT EXISTS postgis;`
-2. **Admin/migrations** → `DATABASE_URL` = Neon's **pooled** connection string (the `-pooler`
-   host) for the owner role.
-3. Create the **app role** and grant it (run as the owner):
-   ```sql
-   CREATE ROLE takeoff_app WITH LOGIN PASSWORD '<strong>' NOSUPERUSER NOBYPASSRLS;
-   GRANT CONNECT ON DATABASE <db> TO takeoff_app;
-   GRANT USAGE ON SCHEMA public TO takeoff_app;
-   ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA public
-     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO takeoff_app;
-   ALTER DEFAULT PRIVILEGES FOR ROLE <owner> IN SCHEMA public
-     GRANT USAGE, SELECT ON SEQUENCES TO takeoff_app;
-   ```
-4. Run migrations as the owner, then grant on already-created tables:
-   ```
-   DATABASE_URL=<owner pooled url> pnpm --filter @takeoff/web db:migrate
-   DATABASE_URL=<owner pooled url> pnpm --filter @takeoff/web db:seed
-   ```
-   ```sql
-   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO takeoff_app;
-   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO takeoff_app;
-   ```
-5. Env: `APP_DATABASE_URL=postgres://takeoff_app:<pw>@<pooler-host>/<db>?sslmode=require`
+**Fastest path — Vercel Marketplace + bootstrap script (this is how the live env was set up):**
+
+```
+# 1. Provision Neon and connect it to the project (creates DATABASE_URL etc. across all envs,
+#    and pulls them into .env.local):
+vercel integration add neon            # accept-terms first if prompted: vercel integration accept-terms neon --yes
+
+# 2. Initialize the database against the OWNER connection. db:bootstrap is idempotent: enables
+#    PostGIS, creates the takeoff_app role (NOSUPERUSER NOBYPASSRLS), and grants it CRUD +
+#    default privileges. Provide a password for the role via APP_DB_PASSWORD.
+node --env-file=.env.local apps/web/node_modules/tsx/dist/cli.mjs apps/web/server/data/bootstrap-db.ts
+node --env-file=.env.local apps/web/node_modules/tsx/dist/cli.mjs apps/web/server/data/migrate.ts
+node --env-file=.env.local apps/web/node_modules/tsx/dist/cli.mjs apps/web/server/data/seed.ts
+# re-run bootstrap once more so the now-created tables get granted to takeoff_app
+node --env-file=.env.local apps/web/node_modules/tsx/dist/cli.mjs apps/web/server/data/bootstrap-db.ts
+
+# 3. Build APP_DATABASE_URL = DATABASE_URL with user/password swapped to takeoff_app:<APP_DB_PASSWORD>,
+#    add it to .env.local and to Vercel (all environments).
+
+# 4. Verify the tenant role is RLS-subject and fails closed:
+node --env-file=.env.local apps/web/node_modules/tsx/dist/cli.mjs apps/web/server/data/verify-app-role.ts
+```
+
+`db:bootstrap` / `db:check` / `db:verify-role` are also exposed as `pnpm --filter @takeoff/web`
+scripts (they read `process.env`, so prefix with `node --env-file=.env.local …` or export the env).
+
+> **Manual equivalent** (if not using the Marketplace flow): create the role and grants by hand —
+> `CREATE ROLE takeoff_app WITH LOGIN PASSWORD '<strong>' NOSUPERUSER NOBYPASSRLS;` then the
+> `GRANT CONNECT/USAGE` + `ALTER DEFAULT PRIVILEGES … GRANT …ON TABLES/SEQUENCES TO takeoff_app`
+> statements, run migrations as the owner, then `GRANT … ON ALL TABLES/SEQUENCES IN SCHEMA public`.
+> `APP_DATABASE_URL=postgres://takeoff_app:<pw>@<pooler-host>/<db>?sslmode=require`.
 
 ## 3. Upstash Redis
 
-1. Create an Upstash Redis database.
-2. Copy the **`rediss://` connection URL** → `REDIS_URL`. (We use `ioredis`, which speaks the
-   Redis protocol; the REST API token isn't needed.)
+**Fastest path — Vercel Marketplace (this is how the live env was set up):**
+
+```
+vercel integration add upstash/upstash-kv   # accept-terms first if prompted: vercel integration accept-terms upstash --yes
+```
+
+This provisions Upstash for Redis, connects it to the project, and sets `REDIS_URL` (+ `KV_*`
+REST vars) across all environments. We use `ioredis`, which speaks `REDIS_URL` directly; the
+REST token isn't needed. Verify:
+
+```
+node --env-file=.env.local apps/web/node_modules/tsx/dist/cli.mjs apps/web/server/redis/redis-check.ts
+```
+
+> **Manual equivalent:** create an Upstash Redis database and copy its `rediss://` URL → `REDIS_URL`.
 
 ## 4. Object storage — Cloudflare R2 (S3-compatible)
 
