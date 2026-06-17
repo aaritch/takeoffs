@@ -14,7 +14,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx server/data/migrate.ts",
     "db:seed": "tsx server/data/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "storage:check": "tsx server/storage/cli.ts check",
+    "storage:setup-cors": "tsx server/storage/cli.ts setup-cors"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.726.1",

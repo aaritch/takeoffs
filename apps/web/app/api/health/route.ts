@@ -15,7 +15,7 @@ export function GET() {
       database: configured('DATABASE_URL'),
       appDatabase: configured('APP_DATABASE_URL'),
       redis: configured('REDIS_URL'),
-      blob: configured('BLOB_READ_WRITE_TOKEN') || configured('S3_BUCKET'),
+      storage: configured('S3_BUCKET') && configured('S3_ACCESS_KEY_ID'),
       auth: configured('AUTH_ISSUER_URL'),
     },
   });

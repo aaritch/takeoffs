@@ -13,7 +13,7 @@ This is the living state of the build. It is the single place a developer (or co
 - **Active task:** P0-05 — **Next.js app shell DONE** (`apps/web` deploys: landing + `/api/health`; `next build` green). Task stays IN_PROGRESS for the OIDC login flow, which needs the identity provider.
 - **Next up:** with the app shell in place, the Phase 1 frontend can begin once auth/data exist — viewer P1-06 (GATE), overlay P1-07, tools P1-09, uploads-client P1-01. These still want the OIDC provider (login) + Neon/Upstash/Blob (data). Or build more UI scaffolding that doesn't need data yet.
 - **Open blockers:** see Section 6 — GitHub repo now wired (`origin` → aaritch/takeoffs). Still need Vercel + Neon/Upstash/Blob integrations and an OIDC provider for hosted/auth/CI; P0-10 needs estimator sign-off.
-- **Last updated:** 2026-06-15, aarit — object storage decided: **Cloudflare R2** (S3-compatible → existing adapter works unchanged; config only). Runbook + .env updated. 137 tests green.
+- **Last updated:** 2026-06-17, aarit — R2 **connect/configure tooling** added: `storage:check` (real put→signed-download→signed-upload→delete round-trip, proven green vs local MinIO) and `storage:setup-cors` (programmatic `PutBucketCors`). Health route now reports `storage` (was stale `blob`). Runbook §4 updated. Remaining: user fills R2 creds in `.env`, then run the two commands against the live bucket.
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
 

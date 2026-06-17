@@ -71,14 +71,7 @@ stand-in. The app uses S3-style presigned URLs for direct uploads (spec §10.2).
    **Account ID** (R2 endpoint is `https://<account_id>.r2.cloudflarestorage.com`).
 2. **R2 → Manage API Tokens → Create API token** with *Object Read & Write* on the bucket.
    This gives an **Access Key ID** and **Secret Access Key** (S3 credentials).
-3. Configure **CORS** on the bucket (R2 settings) to allow `GET` and `PUT` from your app
-   origin — required for direct browser uploads:
-   ```json
-   [{ "AllowedOrigins": ["https://your-app", "http://localhost:3000"],
-      "AllowedMethods": ["GET", "PUT"],
-      "AllowedHeaders": ["*"], "MaxAgeSeconds": 3600 }]
-   ```
-4. Env:
+3. Env (put these in `.env` locally; mirror into Vercel for hosted — see §5):
    ```
    S3_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com
    S3_REGION=auto
@@ -86,9 +79,27 @@ stand-in. The app uses S3-style presigned URLs for direct uploads (spec §10.2).
    S3_ACCESS_KEY_ID=<R2 access key id>
    S3_SECRET_ACCESS_KEY=<R2 secret access key>
    ```
+4. **Configure CORS** (required for direct browser uploads) — apply it programmatically
+   instead of hand-editing the dashboard. Allowed origins default to `APP_BASE_URL` +
+   `http://localhost:3000`; pass extra origins as args:
+   ```
+   node --env-file=.env node_modules/.bin/tsx apps/web/server/storage/cli.ts setup-cors https://your-app
+   # or, with env already exported:
+   pnpm --filter @takeoff/web storage:setup-cors https://your-app
+   ```
+   This `PutBucketCors`-es the policy (`GET`/`PUT`/`HEAD`, `ETag` exposed) and prints the
+   bucket's CORS back so you can confirm it took.
+5. **Verify the bucket** end-to-end (server PUT → signed download → signed upload → delete):
+   ```
+   pnpm --filter @takeoff/web storage:check
+   ```
+   All four steps must report `PASS`. This is the same code path the local MinIO test uses, so
+   a green check here means presigned uploads (P1-01) will work against R2.
 
 > The adapter already forces path-style addressing when an endpoint is set, which R2 supports.
-> No code changes needed — only these env vars.
+> No application code changes are needed — only these env vars plus the CORS step above.
+> The scripts don't auto-load `.env` (same as `db:migrate`/`db:seed`); run them under
+> `node --env-file=.env …` or an env-aware shell.
 
 ## 5. Wire into Vercel
 
@@ -98,6 +109,8 @@ auto-inject. See [`vercel-setup.md`](./vercel-setup.md) for project settings.
 
 ## Verify
 
-- `GET /api/health` reports which integrations are configured.
+- `GET /api/health` reports which integrations are configured (`storage: true` once the
+  `S3_*` vars are set).
+- Storage round-trip: `pnpm --filter @takeoff/web storage:check` (see §4 step 5).
 - Sign-in: visit `/api/auth/signin` → the SSO button → provider → back to the app; the user
   appears in `users` and the top bar shows them.
