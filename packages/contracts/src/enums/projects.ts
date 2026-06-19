@@ -46,6 +46,14 @@ export const INGEST_PIPELINE_ORDER = [
   'EXTRACTING',
 ] as const;
 
+/**
+ * Upload lifecycle of a SourceFile, distinct from ingest_status (which only begins once the
+ * bytes are safely in storage). AWAITING_UPLOAD → UPLOADED (size + checksum verified) → then
+ * ingest_status takes over; or REJECTED if verification fails at completion.
+ */
+export const SourceFileUploadStatus = z.enum(['AWAITING_UPLOAD', 'UPLOADED', 'REJECTED']);
+export type SourceFileUploadStatus = z.infer<typeof SourceFileUploadStatus>;
+
 /** Drawing discipline of a sheet (spec §5.2, Sheet.discipline). UNKNOWN until classified. */
 export const Discipline = z.enum([
   'ARCHITECTURAL',
