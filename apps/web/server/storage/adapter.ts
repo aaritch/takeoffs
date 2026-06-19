@@ -7,6 +7,19 @@ export interface SignedUrl {
 export interface SignedUrlOptions {
   expiresInSeconds?: number;
   contentType?: string;
+  /**
+   * Hex SHA-256 the upload MUST match. When set, the presigned PUT requires the
+   * `x-amz-checksum-sha256` header, so storage itself rejects corrupted bytes — and the digest is
+   * readable back via `headObject` for verify-on-complete (P1-01).
+   */
+  checksumSha256Hex?: string;
+}
+
+/** Metadata about a stored object (from a HEAD), used to verify a completed upload. */
+export interface HeadObjectResult {
+  contentLength: number;
+  /** Hex SHA-256 the store computed, if the object was uploaded with one. */
+  checksumSha256?: string;
 }
 
 /**
@@ -20,6 +33,8 @@ export interface StorageAdapter {
   getSignedUploadUrl(key: string, options?: SignedUrlOptions): Promise<SignedUrl>;
   /** Signed, expiring URL to read a single object (reports/tiles delivery). */
   getSignedDownloadUrl(key: string, options?: SignedUrlOptions): Promise<SignedUrl>;
+  /** Read an object's size (and checksum, if any) — used to verify a completed upload. */
+  headObject(key: string): Promise<HeadObjectResult>;
   deleteObject(key: string): Promise<void>;
 }
 

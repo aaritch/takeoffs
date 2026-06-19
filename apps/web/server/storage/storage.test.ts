@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { afterAll, describe, expect, it } from 'vitest';
 import { S3Storage } from './s3';
 import { orgStorageKey } from './keys';
@@ -53,5 +54,28 @@ describe('S3Storage (local MinIO)', () => {
 
     const { url: downloadUrl } = await storage.getSignedDownloadUrl(k);
     expect(await (await fetch(downloadUrl)).text()).toBe('uploaded directly');
+  });
+
+  it('binds an upload to a SHA-256 and reads size + checksum back via headObject', async () => {
+    const k = key('checksum.bin');
+    const body = 'integrity-checked payload';
+    const hex = createHash('sha256').update(body).digest('hex');
+    const { url } = await storage.getSignedUploadUrl(k, {
+      contentType: 'application/octet-stream',
+      checksumSha256Hex: hex,
+    });
+    const put = await fetch(url, {
+      method: 'PUT',
+      body,
+      headers: {
+        'content-type': 'application/octet-stream',
+        'x-amz-checksum-sha256': Buffer.from(hex, 'hex').toString('base64'),
+      },
+    });
+    expect(put.ok).toBe(true);
+
+    const head = await storage.headObject(k);
+    expect(head.contentLength).toBe(Buffer.byteLength(body));
+    expect(head.checksumSha256).toBe(hex);
   });
 });

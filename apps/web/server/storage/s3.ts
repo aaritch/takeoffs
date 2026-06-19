@@ -1,16 +1,21 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
   DEFAULT_SIGNED_URL_TTL_SECONDS,
+  type HeadObjectResult,
   type SignedUrl,
   type SignedUrlOptions,
   type StorageAdapter,
 } from './adapter';
+
+const hexToBase64 = (hex: string): string => Buffer.from(hex, 'hex').toString('base64');
+const base64ToHex = (b64: string): string => Buffer.from(b64, 'base64').toString('hex');
 
 export interface S3Config {
   /** Custom endpoint for S3-compatible services (MinIO, R2). Omit for AWS S3. */
@@ -60,10 +65,25 @@ export class S3Storage implements StorageAdapter {
         Bucket: this.bucket,
         Key: key,
         ...(options?.contentType ? { ContentType: options.contentType } : {}),
+        // Bind the upload to the expected digest: storage rejects the PUT if the bytes don't
+        // match, and the digest is readable back for verify-on-complete.
+        ...(options?.checksumSha256Hex
+          ? { ChecksumSHA256: hexToBase64(options.checksumSha256Hex) }
+          : {}),
       }),
       { expiresIn },
     );
     return { url, expiresInSeconds: expiresIn };
+  }
+
+  async headObject(key: string): Promise<HeadObjectResult> {
+    const res = await this.client.send(
+      new HeadObjectCommand({ Bucket: this.bucket, Key: key, ChecksumMode: 'ENABLED' }),
+    );
+    return {
+      contentLength: res.ContentLength ?? 0,
+      ...(res.ChecksumSHA256 ? { checksumSha256: base64ToHex(res.ChecksumSHA256) } : {}),
+    };
   }
 
   async getSignedDownloadUrl(key: string, options?: SignedUrlOptions): Promise<SignedUrl> {
