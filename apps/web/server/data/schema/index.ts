@@ -3,6 +3,7 @@ export * from './accounts';
 export * from './projects';
 export * from './plan-sets';
 export * from './source-files';
+export * from './sheets';
 export * from './trade-categories';
 export * from './condition-templates';
 export * from './takeoffs';

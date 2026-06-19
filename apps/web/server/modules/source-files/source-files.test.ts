@@ -45,6 +45,7 @@ function fakeStorage(head: HeadObjectResult): StorageAdapter {
       expiresInSeconds: 900,
     }),
     headObject: async () => head,
+    getObject: async () => new Uint8Array(),
     deleteObject: async () => undefined,
   };
 }

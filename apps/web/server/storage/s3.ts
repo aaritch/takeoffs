@@ -96,6 +96,12 @@ export class S3Storage implements StorageAdapter {
     return { url, expiresInSeconds: expiresIn };
   }
 
+  async getObject(key: string): Promise<Uint8Array> {
+    const res = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+    if (!res.Body) throw new Error(`Object ${key} has no body`);
+    return res.Body.transformToByteArray();
+  }
+
   async deleteObject(key: string): Promise<void> {
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
   }

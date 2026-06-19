@@ -35,6 +35,8 @@ export interface StorageAdapter {
   getSignedDownloadUrl(key: string, options?: SignedUrlOptions): Promise<SignedUrl>;
   /** Read an object's size (and checksum, if any) — used to verify a completed upload. */
   headObject(key: string): Promise<HeadObjectResult>;
+  /** Download an object's full bytes (server-side workers: ingestion scan/inventory). */
+  getObject(key: string): Promise<Uint8Array>;
   deleteObject(key: string): Promise<void>;
 }
 

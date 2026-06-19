@@ -37,6 +37,15 @@ export function getLogger(): Logger {
   return store.getStore()?.logger ?? baseLogger;
 }
 
+/**
+ * Run `fn` under a given correlation id (no HTTP request). Used by workers draining a job whose
+ * message carries the originating request's correlation id, so the upload→ingest flow stays
+ * followable across the broker (P0-09).
+ */
+export function runWithCorrelation<T>(correlationId: string, fn: () => Promise<T>): Promise<T> {
+  return store.run({ correlationId, logger: baseLogger.child({ correlationId }) }, fn);
+}
+
 /** The current request's correlation id, if called within a request context. */
 export function getCurrentCorrelationId(): string | undefined {
   return store.getStore()?.correlationId;
