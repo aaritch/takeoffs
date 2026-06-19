@@ -2,6 +2,7 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -100,6 +101,23 @@ export class S3Storage implements StorageAdapter {
     const res = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
     if (!res.Body) throw new Error(`Object ${key} has no body`);
     return res.Body.transformToByteArray();
+  }
+
+  async listObjects(prefix: string): Promise<string[]> {
+    const keys: string[] = [];
+    let token: string | undefined;
+    do {
+      const res = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          ...(token ? { ContinuationToken: token } : {}),
+        }),
+      );
+      for (const o of res.Contents ?? []) if (o.Key) keys.push(o.Key);
+      token = res.IsTruncated ? res.NextContinuationToken : undefined;
+    } while (token);
+    return keys;
   }
 
   async deleteObject(key: string): Promise<void> {

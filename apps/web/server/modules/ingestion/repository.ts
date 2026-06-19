@@ -25,6 +25,17 @@ export const sheetsRepo = {
     await tx.delete(sheets).where(eq(sheets.source_file_id, sourceFileId));
   },
 
+  async update(
+    tx: OrgScopedTx,
+    id: string,
+    patch: Partial<typeof sheets.$inferInsert>,
+  ): Promise<void> {
+    await tx
+      .update(sheets)
+      .set({ ...patch, updated_at: new Date() })
+      .where(eq(sheets.id, id));
+  },
+
   /** A plan set's sheets in deterministic order (by source file, then page index). */
   async listByPlanSet(tx: OrgScopedTx, planSetId: string): Promise<Sheet[]> {
     return tx.query.sheets.findMany({

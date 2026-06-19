@@ -37,6 +37,8 @@ export interface StorageAdapter {
   headObject(key: string): Promise<HeadObjectResult>;
   /** Download an object's full bytes (server-side workers: ingestion scan/inventory). */
   getObject(key: string): Promise<Uint8Array>;
+  /** List object keys under a prefix (e.g. to enumerate a sheet's tile pyramid). */
+  listObjects(prefix: string): Promise<string[]>;
   deleteObject(key: string): Promise<void>;
 }
 

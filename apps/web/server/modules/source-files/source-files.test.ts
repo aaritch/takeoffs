@@ -46,6 +46,7 @@ function fakeStorage(head: HeadObjectResult): StorageAdapter {
     }),
     headObject: async () => head,
     getObject: async () => new Uint8Array(),
+    listObjects: async () => [],
     deleteObject: async () => undefined,
   };
 }
