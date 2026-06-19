@@ -8,6 +8,8 @@ import { NotFound } from '../source-files/errors';
 import { sourceFilesRepo, type SourceFile } from '../source-files/repository';
 import { CorruptFileError, defaultPageInventory, type PageInventory } from './page-inventory';
 import { recomputePlanSetStatus, sheetsRepo, type Sheet } from './repository';
+import type { MetadataExtractor } from './extractor';
+import { extractAndApply } from './metadata';
 import type { Rasterizer } from './rasterizer';
 import type { Tiler } from './tiler';
 import { eicarScanner, type Scanner } from './scanner';
@@ -34,6 +36,8 @@ export interface IngestionDeps {
   /** Provide BOTH to enable the rasterize+tile step (P1-03); omit for split-only ingestion. */
   rasterizer?: Rasterizer;
   tiler?: Tiler;
+  /** Provide to enable the metadata extraction step (P1-04). */
+  extractor?: MetadataExtractor;
   /** Working render DPI (default 150). */
   dpi?: number;
 }
@@ -101,6 +105,15 @@ export async function ingestSourceFile(
   // RASTERIZE + TILE (P1-03) when both are configured; otherwise stop at split.
   if (deps.rasterizer && deps.tiler) {
     await rasterizeAndTile(deps, deps.rasterizer, deps.tiler, orgId, sf, createdSheets, bytes);
+  }
+
+  // EXTRACT sheet metadata (P1-04) when configured. Best-effort; never fails the file.
+  if (deps.extractor) {
+    await setStatus(db, orgId, sourceFileId, 'EXTRACTING');
+    await extractAndApply(
+      { db, storage, extractor: deps.extractor },
+      { orgId, sourceFileId, bytes },
+    );
   }
 
   await withOrgScope(db, orgId, async (tx) => {

@@ -68,6 +68,14 @@ export const Discipline = z.enum([
 export type Discipline = z.infer<typeof Discipline>;
 
 /**
+ * Provenance of a sheet metadata field (P1-04). EXTRACTED = set by OCR/text extraction (a
+ * candidate); USER = a human edit, which WINS over future re-extraction (re-running never
+ * overwrites a USER field).
+ */
+export const MetadataSource = z.enum(['EXTRACTED', 'USER']);
+export type MetadataSource = z.infer<typeof MetadataSource>;
+
+/**
  * Sheet scale calibration status (spec §5.2, Sheet.scale_status).
  * - UNSET: no scale yet — quantities are not trustworthy.
  * - AUTO: AI-detected, not yet human-confirmed — provisional, excluded from final reports.

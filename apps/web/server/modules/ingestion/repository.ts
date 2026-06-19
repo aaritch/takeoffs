@@ -12,6 +12,17 @@ export const sheetsRepo = {
     return tx.insert(sheets).values(values).returning();
   },
 
+  async getById(tx: OrgScopedTx, id: string): Promise<Sheet | undefined> {
+    return tx.query.sheets.findFirst({ where: and(eq(sheets.id, id), isNull(sheets.deleted_at)) });
+  },
+
+  async listBySourceFile(tx: OrgScopedTx, sourceFileId: string): Promise<Sheet[]> {
+    return tx.query.sheets.findMany({
+      where: and(eq(sheets.source_file_id, sourceFileId), isNull(sheets.deleted_at)),
+      orderBy: [asc(sheets.index_in_set)],
+    });
+  },
+
   async countBySourceFile(tx: OrgScopedTx, sourceFileId: string): Promise<number> {
     const rows = await tx
       .select({ n: sql<number>`count(*)::int` })

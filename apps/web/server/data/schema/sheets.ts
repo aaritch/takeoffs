@@ -1,5 +1,5 @@
 import { pgTable, text, integer, uuid, index, uniqueIndex } from 'drizzle-orm/pg-core';
-import type { Discipline, ScaleStatus } from '@takeoff/contracts';
+import type { Discipline, MetadataSource, ScaleStatus } from '@takeoff/contracts';
 import { primaryId, timestamps } from './columns';
 import { organizations } from './accounts';
 import { planSets } from './plan-sets';
@@ -30,6 +30,12 @@ export const sheets = pgTable(
     sheet_number: text('sheet_number'),
     sheet_title: text('sheet_title'),
     discipline: text('discipline').$type<Discipline>().notNull().default('UNKNOWN'),
+    // Per-field provenance (P1-04): USER edits win over future re-extraction. NULL = never set.
+    sheet_number_source: text('sheet_number_source').$type<MetadataSource>(),
+    sheet_title_source: text('sheet_title_source').$type<MetadataSource>(),
+    discipline_source: text('discipline_source').$type<MetadataSource>(),
+    /** Normalized, searchable text (number + title + discipline) — the sheet's search index entry. */
+    search_text: text('search_text'),
     width_px: integer('width_px'),
     height_px: integer('height_px'),
     dpi: integer('dpi'),
