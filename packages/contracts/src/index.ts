@@ -5,3 +5,4 @@ export * from './http';
 export * from './events';
 export * from './jobs';
 export * from './measurements';
+export * from './observability';

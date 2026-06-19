@@ -50,6 +50,9 @@ importers:
       '@takeoff/geometry':
         specifier: workspace:*
         version: link:../../packages/geometry
+      '@takeoff/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@takeoff/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -122,6 +125,16 @@ importers:
       '@takeoff/contracts':
         specifier: workspace:*
         version: link:../contracts
+    devDependencies:
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.21)(jsdom@25.0.1)
+
+  packages/observability:
+    dependencies:
+      uuidv7:
+        specifier: ^1.0.2
+        version: 1.2.1
     devDependencies:
       vitest:
         specifier: ^2.1.9

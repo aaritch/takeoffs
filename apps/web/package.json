@@ -28,6 +28,7 @@
     "@takeoff/auth": "workspace:*",
     "@takeoff/contracts": "workspace:*",
     "@takeoff/geometry": "workspace:*",
+    "@takeoff/observability": "workspace:*",
     "@takeoff/ui": "workspace:*",
     "drizzle-orm": "^0.38.3",
     "ioredis": "^5.4.2",

@@ -1,0 +1,25 @@
+{
+  "name": "@takeoff/observability",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Edge-safe observability primitives shared across every service: structured JSON logging, correlation-id handling, and log-based metrics. No DB, no Node-only deps (so it runs in edge middleware and workers alike).",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "uuidv7": "^1.0.2"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.9"
+  }
+}

@@ -1,9 +1,17 @@
 import type { NextAuthConfig } from 'next-auth';
 
 /** Authenticated app sections (the `app/(app)` route group's URLs). */
-const APP_PREFIXES = ['/dashboard', '/projects', '/reports', '/orders', '/billing'];
+export const APP_PREFIXES = ['/dashboard', '/projects', '/reports', '/orders', '/billing'];
 
 const issuer = process.env.AUTH_ISSUER_URL;
+
+/** Whether auth is configured (an OIDC issuer is set); when false, route gating is disabled. */
+export const authEnabled = Boolean(issuer);
+
+/** True if `pathname` is inside an authenticated app section that requires a signed-in user. */
+export function isAppRoute(pathname: string): boolean {
+  return APP_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 /**
  * Edge-safe auth config (no database, no Node-only deps) shared by the middleware and the full
@@ -26,11 +34,8 @@ export const authConfig = {
     : [],
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      if (!issuer) return true; // auth not configured (local/dev) — don't gate
-      const isAppRoute = APP_PREFIXES.some(
-        (p) => nextUrl.pathname === p || nextUrl.pathname.startsWith(`${p}/`),
-      );
-      if (!isAppRoute) return true;
+      if (!authEnabled) return true; // auth not configured (local/dev) — don't gate
+      if (!isAppRoute(nextUrl.pathname)) return true;
       return Boolean(auth?.user);
     },
   },
