@@ -13,7 +13,8 @@ This is the living state of the build. It is the single place a developer (or co
 - **Active task:** P0-05 — **Next.js app shell DONE** (`apps/web` deploys: landing + `/api/health`; `next build` green). Task stays IN_PROGRESS for the OIDC login flow, which needs the identity provider.
 - **Next up:** with the app shell in place, the Phase 1 frontend can begin once auth/data exist — viewer P1-06 (GATE), overlay P1-07, tools P1-09, uploads-client P1-01. These still want the OIDC provider (login) + Neon/Upstash/Blob (data). Or build more UI scaffolding that doesn't need data yet.
 - **Open blockers:** see Section 6 — GitHub repo now wired (`origin` → aaritch/takeoffs). Still need Vercel + Neon/Upstash/Blob integrations and an OIDC provider for hosted/auth/CI; P0-10 needs estimator sign-off.
-- **Last updated:** 2026-06-19, aarit — **DEPLOYED TO VERCEL PRODUCTION — full stack confirmed live.** `https://takeoffs-aaritchs-projects.vercel.app`: `/api/health` → all 5 integrations `true` (db, appDb, redis, storage, auth); landing 200; OIDC sign-in 302s to Entra with the prod redirect_uri/PKCE/scope. Fixed Vercel project settings to make it build: **rootDirectory=`apps/web`, framework=`nextjs`** (was empty → "no public dir" error), and **deployment protection → preview-only** (was protecting prod too). Deployed via `vercel deploy --prod` (project is **not** git-connected yet — that's a P0-08 item). Only manual step left: a human browser login to confirm JIT user provisioning.
+- **Last updated:** 2026-06-19, aarit — **P0-08 CI/CD DONE.** GitHub Actions `ci.yml` **green** (run 27810723824: lint/format/typecheck/test against ephemeral Postgres+PostGIS/Redis/MinIO/build). Fixed a stale lockfile (`@vercel/blob` left in `pnpm-lock.yaml` → `--frozen-lockfile` failed; regenerated). Vercel git integration confirmed working (push `main` → production READY). Added `db-migrate.yml` (manual, env-gated). Phase 0 now 8/10. **Remaining Phase 0: P0-09 observability; P0-10 awaits estimator sign-off.** Optional hardening: branch protection on `main` + a `DATABASE_URL` repo secret for the migrate workflow.
+- **Prior (2026-06-19):** **DEPLOYED TO VERCEL PRODUCTION — full stack confirmed live.** `https://takeoffs-aaritchs-projects.vercel.app`: `/api/health` → all 5 integrations `true` (db, appDb, redis, storage, auth); landing 200; OIDC sign-in 302s to Entra with the prod redirect_uri/PKCE/scope. Fixed Vercel project settings to make it build: **rootDirectory=`apps/web`, framework=`nextjs`** (was empty → "no public dir" error), and **deployment protection → preview-only** (was protecting prod too). Deployed via `vercel deploy --prod` (project is **not** git-connected yet — that's a P0-08 item). Only manual step left: a human browser login to confirm JIT user provisioning.
 - **Prior (2026-06-17):** **All Phase-0 hosted integrations LIVE: Neon + Upstash + R2 + OIDC.** OIDC done via **Microsoft Entra ID** (Azure CLI): single-tenant app registration "Takeoff Platform" (client `5b340884…`, tenant `864774d8…`) with local+prod redirect URIs, `email`/`preferred_username` optional id-token claims, client secret minted; `AUTH_*` wired into `.env.local` + Vercel (all envs; `AUTH_URL` prod-only). **Login flow verified end-to-end** (dev server: `/api/health` → auth:true; sign-in 302s to Entra authorize with correct client_id, redirect_uri, PKCE, scope=openid profile email) — only a human browser login remains to confirm JIT provisioning. Neon/Upstash/R2 all provisioned + verified earlier today. **Next: P0-08 CI/CD, then first hosted deploy; or resume Phase-1 frontend.**
 
 > Keep this section to a few lines. It is the first thing the next person reads. The detail lives in the task registry below.
@@ -60,7 +61,7 @@ Other conventions:
 
 Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status as you work. Keep Task and Depends-on as written so cross-references stay valid.
 
-### Phase 0 — Foundations  (progress: 7/10 DONE)
+### Phase 0 — Foundations  (progress: 8/10 DONE)
 
 | ID | Task | Depends on | Gate | Owner | Status |
 |----|------|-----------|------|-------|--------|
@@ -71,7 +72,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P0-05 | Identity provider and login flow | P0-04 | no | aarit | DONE |
 | P0-06 | Accounts module: orgs, memberships, RBAC | P0-05, P0-03 | no | aarit | DONE |
 | P0-07 | Org-isolation data-access layer | P0-06 | YES | aarit | DONE |
-| P0-08 | CI/CD pipeline | P0-01, P0-04 | no | aarit | IN_PROGRESS |
+| P0-08 | CI/CD pipeline | P0-01, P0-04 | no | aarit | DONE |
 | P0-09 | Observability skeleton | P0-08 | no | - | NOT_STARTED |
 | P0-10 | Seed trade structure and starter conditions | P0-03 | YES | aarit | IN_REVIEW |
 
@@ -149,7 +150,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P5-05 | Cloud-storage import | none | no | - | NOT_STARTED |
 | P5-06 | Security review and penetration test | P0-07 | no | - | NOT_STARTED |
 
-**Totals:** 59 tasks. 9 DONE / 1 IN_PROGRESS / 1 IN_REVIEW / 0 BLOCKED / 48 NOT_STARTED. Update these counts as you go.
+**Totals:** 59 tasks. 10 DONE / 1 IN_PROGRESS / 1 IN_REVIEW / 0 BLOCKED / 47 NOT_STARTED. Update these counts as you go.
 
 ---
 
@@ -229,7 +230,7 @@ Track whether the shared scaffolding actually works, separate from feature progr
 - [~] Dev environment (P0-04): **local** docker-compose stack up & PostGIS spatial column verified; **hosted** now LIVE — **Neon Postgres** (PostGIS, `takeoff_app` RLS role, migrated+seeded, org-isolation proven on the live DB), **Upstash Redis** (round-trip OK), **Cloudflare R2** (round-trip OK). All env vars (`DATABASE_URL`, `APP_DATABASE_URL`, `REDIS_URL`, `S3_*`) set in Vercel across Prod/Preview/Dev and pulled to `.env.local`. **Note:** `.env.local` (vercel pull) points local `pnpm dev` at HOSTED services and overrides `.env` — rename/remove it to develop against the local docker stack. Only OIDC provisioning still pending.
 - [x] Next.js app shell + **Auth.js OIDC LIVE** (P0-05): JIT provisioning, JWT session, middleware route-gating, sign-in/out UI — wired to **Microsoft Entra ID** (single-tenant app reg). Verified: sign-in 302s to Entra authorize with correct client_id/redirect_uri/PKCE/scope; `/api/health` auth:true. Redis + S3 also live. (Final human confirmation: complete one browser login.)
 - [~] Hosted deploy: **app is LIVE on Vercel production** (`takeoffs-aaritchs-projects.vercel.app`), deployed manually via `vercel deploy --prod`. Project settings: rootDirectory=`apps/web`, framework=`nextjs`, sourceFilesOutsideRootDirectory=true, ssoProtection=preview-only. **Git auto-deploy NOT connected yet** (P0-08).
-- [~] CI runs lint, tests, build, and deploys (P0-08): **GitHub repo is git-connected to Vercel** (push to `main` → production, PRs → preview; productionBranch=main). **GitHub Actions `ci.yml`** runs lint/format/typecheck/test/build with ephemeral Postgres+PostGIS/Redis/MinIO; **`db-migrate.yml`** is the explicit manual migration workflow (needs a `DATABASE_URL` repo secret). Pending: confirm first CI run green; optionally enable branch protection on `main` to gate prod.
+- [x] CI runs lint, tests, build, and deploys (P0-08): **GitHub Actions `ci.yml` green** (lint/format/typecheck/test/build vs ephemeral Postgres+PostGIS/Redis/MinIO). **Git-connected to Vercel** (push `main` → production READY, PRs → preview). **`db-migrate.yml`** = explicit manual migration workflow (set a `DATABASE_URL` repo secret to use it). Optional: branch protection on `main` to gate prod by approval.
 - [ ] Correlation id traces a request across services (P0-09)
 - [ ] GPU worker pool provisioned and scales to zero (P2-02)
 - [ ] Payment provider connected in test mode (P4-01)
