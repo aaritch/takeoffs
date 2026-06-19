@@ -53,3 +53,29 @@ admin role). Seed global data once with `db:seed`.
 Workers (ingestion/raster/tile/export), the AI inference service, and the realtime WebSocket
 gateway do **not** deploy to Vercel — they run on the Phase-2 compute host. Vercel hosts only
 the Next.js app (UI + synchronous API).
+
+## 7. CI/CD (P0-08)
+
+Two halves, matching the stack: **GitHub Actions** runs the checks; **Vercel's Git integration**
+does the deploys.
+
+- **Checks — `.github/workflows/ci.yml`** runs on every push/PR to `main`: install → lint →
+  format:check → type-check → test → build. Integration tests run against ephemeral service
+  containers (Postgres+PostGIS, Redis) plus a MinIO container, with `db:bootstrap` creating the
+  PostGIS extension + `takeoff_app` RLS role — the same shape as
+  `tools/local-dev/docker-compose.yml`, so green locally ⇒ green in CI.
+- **Deploy — Vercel Git integration** (already connected; productionBranch=`main`): pushing to
+  `main` deploys to **production**; PRs get **preview** deployments. Project settings that make
+  the monorepo build: Root Directory `apps/web`, Framework `nextjs`,
+  `sourceFilesOutsideRootDirectory=true`. Deployment Protection is **preview-only** so prod is
+  public.
+- **Migrations — `.github/workflows/db-migrate.yml`** (manual `workflow_dispatch`, `production`
+  environment): runs `db:migrate` (and optionally `db:seed`) against the hosted DB. **Kept out
+  of the build/deploy path** so schema changes are deliberate and ordered (expand/contract).
+  Requires a repo **secret `DATABASE_URL`** = the Neon **owner** connection. Set it with
+  `gh secret set DATABASE_URL` or in repo Settings → Secrets → Actions.
+
+**Gate production on CI (recommended):** enable branch protection on `main` requiring the
+**CI / verify** status check (and PR review). That forces changes through a passing pipeline
+before they reach the production branch — the "production deploys are gated by approval" rule.
+Not auto-enabled here because it blocks direct pushes to `main`.

@@ -11,9 +11,7 @@ async function main(): Promise<void> {
   const client = new Client({ connectionString: url });
   await client.connect();
   try {
-    const who = await client.query(
-      'select current_user, current_database(), version()',
-    );
+    const who = await client.query('select current_user, current_database(), version()');
     console.log('current_user:    ', who.rows[0].current_user);
     console.log('current_database:', who.rows[0].current_database);
     console.log('version:         ', String(who.rows[0].version).split(',')[0]);
@@ -21,7 +19,12 @@ async function main(): Promise<void> {
     const su = await client.query(
       'select rolsuper, rolbypassrls from pg_roles where rolname = current_user',
     );
-    console.log('rolsuper:        ', su.rows[0]?.rolsuper, '| rolbypassrls:', su.rows[0]?.rolbypassrls);
+    console.log(
+      'rolsuper:        ',
+      su.rows[0]?.rolsuper,
+      '| rolbypassrls:',
+      su.rows[0]?.rolbypassrls,
+    );
 
     const avail = await client.query(
       "select default_version, installed_version from pg_available_extensions where name = 'postgis'",
@@ -37,9 +40,7 @@ async function main(): Promise<void> {
       );
     }
 
-    const appRole = await client.query(
-      "select 1 from pg_roles where rolname = 'takeoff_app'",
-    );
+    const appRole = await client.query("select 1 from pg_roles where rolname = 'takeoff_app'");
     console.log('takeoff_app role:', appRole.rows.length ? 'exists' : 'absent');
 
     const tables = await client.query(

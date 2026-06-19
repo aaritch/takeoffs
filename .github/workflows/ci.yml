@@ -1,0 +1,103 @@
+name: CI
+
+# Lint, type-check, unit + integration tests, and build on every push/PR to main.
+# Integration tests run against ephemeral service containers (Postgres+PostGIS, Redis) plus a
+# MinIO container — mirroring tools/local-dev/docker-compose.yml so CI matches local exactly.
+# Production deploys are handled by Vercel's Git integration (push to main → production);
+# gate them with branch protection requiring this workflow's check (see docs/runbooks).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: takeoff
+          POSTGRES_PASSWORD: takeoff
+          POSTGRES_DB: takeoff
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U takeoff -d takeoff"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      # Mirrors the local stack credentials (non-secret, ephemeral CI services only).
+      DATABASE_URL: postgres://takeoff:takeoff@localhost:5432/takeoff
+      APP_DATABASE_URL: postgres://takeoff_app:takeoff_app@localhost:5432/takeoff
+      APP_DB_PASSWORD: takeoff_app
+      REDIS_URL: redis://localhost:6379
+      S3_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: takeoff-dev
+      S3_ACCESS_KEY_ID: takeoff
+      S3_SECRET_ACCESS_KEY: takeoffdev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Start MinIO (S3-compatible) and create bucket
+        env:
+          AWS_ACCESS_KEY_ID: takeoff
+          AWS_SECRET_ACCESS_KEY: takeoffdev
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=takeoff -e MINIO_ROOT_PASSWORD=takeoffdev \
+            minio/minio:RELEASE.2025-04-08T15-41-24Z server /data
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9000/minio/health/ready; then echo "minio ready"; break; fi
+            sleep 1
+          done
+          aws --endpoint-url http://localhost:9000 s3 mb s3://takeoff-dev || true
+
+      - name: Bootstrap database (PostGIS + takeoff_app RLS role + grants)
+        run: pnpm --filter @takeoff/web db:bootstrap
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

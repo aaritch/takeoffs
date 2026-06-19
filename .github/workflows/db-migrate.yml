@@ -1,0 +1,45 @@
+name: DB migrate (hosted)
+
+# Explicit, manually-triggered database migration step — kept OUT of the build/deploy path so
+# schema changes are applied deliberately and in order (CLAUDE.md invariant; P0-08 card).
+# Requires a DATABASE_URL secret = the hosted Neon OWNER connection (admin role that runs DDL).
+# The `production` environment lets you require a reviewer's approval before it runs.
+#
+# Migration ordering rule (P0-08 caveat): expand/contract. Add columns before code writes them;
+# remove readers before dropping columns — so every intermediate deploy state is safe.
+
+on:
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: Also run the idempotent global seed (trades/conditions)
+        type: boolean
+        default: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run migrations
+        run: pnpm --filter @takeoff/web db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Seed global data
+        if: ${{ inputs.seed }}
+        run: pnpm --filter @takeoff/web db:seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

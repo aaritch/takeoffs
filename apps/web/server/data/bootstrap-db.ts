@@ -19,7 +19,8 @@ async function main(): Promise<void> {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL (owner connection) is not set');
   const appPassword = process.env.APP_DB_PASSWORD;
-  if (!appPassword) throw new Error('APP_DB_PASSWORD is not set (password for the takeoff_app role)');
+  if (!appPassword)
+    throw new Error('APP_DB_PASSWORD is not set (password for the takeoff_app role)');
 
   const client = new Client({ connectionString: url });
   await client.connect();

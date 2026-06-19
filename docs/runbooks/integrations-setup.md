@@ -119,7 +119,7 @@ stand-in. The app uses S3-style presigned URLs for direct uploads (spec §10.2).
 
 1. In the Cloudflare dashboard → **R2** → create a bucket (e.g. `takeoff`). Note your
    **Account ID** (R2 endpoint is `https://<account_id>.r2.cloudflarestorage.com`).
-2. **R2 → Manage API Tokens → Create API token** with *Object Read & Write* on the bucket.
+2. **R2 → Manage API Tokens → Create API token** with _Object Read & Write_ on the bucket.
    This gives an **Access Key ID** and **Secret Access Key** (S3 credentials).
 3. Env (put these in `.env` locally; mirror into Vercel for hosted — see §5):
    ```

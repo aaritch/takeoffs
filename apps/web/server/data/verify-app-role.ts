@@ -22,13 +22,22 @@ async function main(): Promise<void> {
     const bypass = who.rows[0].bypass;
     console.log(`current_user:  ${user}`);
     console.log(`rolbypassrls:  ${bypass}`);
-    if (user !== 'takeoff_app') { console.error('  ✗ expected takeoff_app'); failed = true; }
-    if (bypass !== false) { console.error('  ✗ role must NOT bypass RLS'); failed = true; }
+    if (user !== 'takeoff_app') {
+      console.error('  ✗ expected takeoff_app');
+      failed = true;
+    }
+    if (bypass !== false) {
+      console.error('  ✗ role must NOT bypass RLS');
+      failed = true;
+    }
 
     // Global seed (trade_categories) must be readable by the tenant role.
     const trades = await client.query('select count(*)::int as n from trade_categories');
     console.log(`trade_categories visible: ${trades.rows[0].n}`);
-    if (trades.rows[0].n < 1) { console.error('  ✗ expected seeded trade_categories to be visible'); failed = true; }
+    if (trades.rows[0].n < 1) {
+      console.error('  ✗ expected seeded trade_categories to be visible');
+      failed = true;
+    }
 
     // Org-scoped table with no org context set → RLS must return zero rows (fail closed).
     const projects = await client.query('select count(*)::int as n from projects');
