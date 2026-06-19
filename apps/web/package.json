@@ -43,10 +43,12 @@
     "uuidv7": "^1.0.2"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.1.0",
     "@types/pg": "^8.11.11",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
     "drizzle-kit": "^0.30.2",
+    "jsdom": "^25.0.1",
     "tsx": "^4.19.2",
     "vitest": "^2.1.9"
   }

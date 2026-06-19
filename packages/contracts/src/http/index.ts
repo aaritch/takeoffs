@@ -4,5 +4,6 @@ export * from './error';
 export * from './pagination';
 export * from './projects';
 export * from './plan-sets';
+export * from './processing';
 export * from './sheets';
 export * from './uploads';

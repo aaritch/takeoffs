@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { OrgScopedTx } from '../../data/org-scope';
 import { planSets, sourceFiles } from '../../data/schema';
 
@@ -48,6 +48,13 @@ export const sourceFilesRepo = {
   async getById(tx: OrgScopedTx, id: string): Promise<SourceFile | undefined> {
     return tx.query.sourceFiles.findFirst({
       where: and(eq(sourceFiles.id, id), isNull(sourceFiles.deleted_at)),
+    });
+  },
+
+  async listByPlanSet(tx: OrgScopedTx, planSetId: string): Promise<SourceFile[]> {
+    return tx.query.sourceFiles.findMany({
+      where: and(eq(sourceFiles.plan_set_id, planSetId), isNull(sourceFiles.deleted_at)),
+      orderBy: [asc(sourceFiles.created_at)],
     });
   },
 
