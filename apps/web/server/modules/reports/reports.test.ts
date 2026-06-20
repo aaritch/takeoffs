@@ -17,6 +17,10 @@ import { takeoffsRepo } from '../takeoffs/repository';
 import { seedGlobalTradeData } from '../trades/seed';
 import { drainExportOne, generateReport, reportsService } from './index';
 
+// The enqueue path reads REDIS_URL via getRedis(); default it like the ingestion test so the file
+// is self-sufficient regardless of the vitest worker's ambient env.
+process.env.REDIS_URL ??= 'redis://localhost:6379';
+
 const adminUrl = process.env.DATABASE_URL ?? 'postgres://takeoff:takeoff@localhost:5432/takeoff';
 const appUrl =
   process.env.APP_DATABASE_URL ?? 'postgres://takeoff_app:takeoff_app@localhost:5432/takeoff';
