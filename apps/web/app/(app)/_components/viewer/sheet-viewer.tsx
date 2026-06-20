@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Badge, Stack } from '@takeoff/ui';
 import type { SheetView } from '@takeoff/contracts';
-import { TileViewer } from './tile-viewer';
+import { LayeredViewer } from './layered-viewer';
 
 /**
  * Sheet viewer page body (P1-06): fetches the sheet, then renders the deep-zoom {@link TileViewer}
@@ -49,7 +49,8 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
           {sheet.widthPx}×{sheet.heightPx}px · {sheet.discipline}
         </span>
       </Stack>
-      <TileViewer sheet={{ id: sheet.id, widthPx: sheet.widthPx, heightPx: sheet.heightPx }} />
+      {/* The vector overlay shares this viewer's viewport; measurements populate once P1-09 lands. */}
+      <LayeredViewer sheet={{ id: sheet.id, widthPx: sheet.widthPx, heightPx: sheet.heightPx }} />
     </Stack>
   );
 }
