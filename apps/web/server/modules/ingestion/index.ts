@@ -11,6 +11,7 @@ export {
   type ExtractedMetadata,
 } from './extractor';
 export { extractAndApply, updateSheetMetadata, sheetToView, type MetadataDeps } from './metadata';
+export { getTileObject, type TileObject } from './tiles';
 export { eicarScanner, type Scanner, type ScanResult } from './scanner';
 export { defaultPageInventory, CorruptFileError, type PageInventory } from './page-inventory';
 export { loggingNotifier, type Notifier, type IngestFailureNotice } from './notifier';
