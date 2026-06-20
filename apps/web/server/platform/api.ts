@@ -4,6 +4,7 @@ import type { ErrorEnvelope, FieldError } from '@takeoff/contracts';
 import { auth } from '@/auth';
 import { getDb } from '../data/client';
 import { resolveAuthContext } from '../modules/accounts/auth-context';
+import { ConditionError } from '../modules/conditions/errors';
 import { MeasurementError } from '../modules/measurements/errors';
 import { SourceFileError } from '../modules/source-files/errors';
 import { withRequestContext } from './observability';
@@ -65,7 +66,7 @@ function mapError(err: unknown): { status: number; body: ErrorEnvelope } {
     const status = err.code === 'NOT_FOUND' ? 404 : err.code === 'VALIDATION_FAILED' ? 400 : 422;
     return { status, body: envelope(err.code, err.message, err.details) };
   }
-  if (err instanceof MeasurementError) {
+  if (err instanceof MeasurementError || err instanceof ConditionError) {
     return { status: err.code === 'NOT_FOUND' ? 404 : 400, body: envelope(err.code, err.message) };
   }
   throw err;

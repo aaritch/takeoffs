@@ -19,6 +19,13 @@ export const measurementsRepo = {
     });
   },
 
+  /** All live measurements on a sheet, for the viewer overlay (P1-07/P1-09). */
+  async listBySheet(tx: OrgScopedTx, sheetId: string): Promise<Measurement[]> {
+    return tx.query.measurements.findMany({
+      where: and(eq(measurements.sheet_id, sheetId), isNull(measurements.deleted_at)),
+    });
+  },
+
   async update(
     tx: OrgScopedTx,
     id: string,

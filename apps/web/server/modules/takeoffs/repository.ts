@@ -16,4 +16,11 @@ export const takeoffsRepo = {
       where: and(eq(takeoffs.id, id), isNull(takeoffs.deleted_at)),
     });
   },
+
+  /** The first (default) takeoff for a plan set, if one exists. */
+  async firstForPlanSet(tx: OrgScopedTx, planSetId: string): Promise<Takeoff | undefined> {
+    return tx.query.takeoffs.findFirst({
+      where: and(eq(takeoffs.plan_set_id, planSetId), isNull(takeoffs.deleted_at)),
+    });
+  },
 };

@@ -2,6 +2,7 @@
 // below (error envelope, cursor pagination) are API-wide conventions from spec §12.1.
 export * from './error';
 export * from './pagination';
+export * from './conditions';
 export * from './projects';
 export * from './plan-sets';
 export * from './processing';
