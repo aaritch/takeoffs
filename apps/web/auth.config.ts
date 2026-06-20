@@ -1,7 +1,14 @@
 import type { NextAuthConfig } from 'next-auth';
 
 /** Authenticated app sections (the `app/(app)` route group's URLs). */
-export const APP_PREFIXES = ['/dashboard', '/projects', '/reports', '/orders', '/billing'];
+export const APP_PREFIXES = [
+  '/dashboard',
+  '/projects',
+  '/sheets',
+  '/reports',
+  '/orders',
+  '/billing',
+];
 
 const issuer = process.env.AUTH_ISSUER_URL;
 

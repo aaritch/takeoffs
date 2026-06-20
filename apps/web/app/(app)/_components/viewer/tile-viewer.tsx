@@ -24,7 +24,14 @@ export interface ViewerSheet {
 const MIN_SCALE = 0.02;
 const MAX_SCALE = 8;
 
-export function TileViewer({ sheet }: { sheet: ViewerSheet }) {
+export function TileViewer({
+  sheet,
+  tileUrl: tileUrlProp,
+}: {
+  sheet: ViewerSheet;
+  /** Override how a tile URL is built (default: the authorized /v1 tile route). */
+  tileUrl?: (level: number, col: number, row: number) => string;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -50,8 +57,10 @@ export function TileViewer({ sheet }: { sheet: ViewerSheet }) {
   );
   const tileUrl = useCallback(
     (level: number, col: number, row: number) =>
-      `/api/v1/sheets/${sheet.id}/tiles/tiles_files/${level}/${col}_${row}.png`,
-    [sheet.id],
+      tileUrlProp
+        ? tileUrlProp(level, col, row)
+        : `/api/v1/sheets/${sheet.id}/tiles/tiles_files/${level}/${col}_${row}.png`,
+    [sheet.id, tileUrlProp],
   );
 
   const draw = useCallback(() => {
