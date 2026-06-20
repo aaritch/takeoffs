@@ -44,6 +44,12 @@ export function MeasurementToolbar({
   calibrating,
   scaleConfirmed,
   readout,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  canDelete,
+  onDelete,
 }: {
   tool: ToolMode;
   onToolChange: (t: ToolMode) => void;
@@ -55,6 +61,12 @@ export function MeasurementToolbar({
   calibrating: boolean;
   scaleConfirmed: boolean;
   readout: LiveQuantity | null;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+  canDelete: boolean;
+  onDelete: () => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
@@ -91,6 +103,16 @@ export function MeasurementToolbar({
           <Badge tone="danger">no scale</Badge>
         )}
         {readout ? <Badge tone="neutral">{readoutText(readout)}</Badge> : null}
+        <span style={{ flex: 1 }} />
+        <Button size="sm" variant="secondary" onClick={onUndo} disabled={!canUndo}>
+          Undo
+        </Button>
+        <Button size="sm" variant="secondary" onClick={onRedo} disabled={!canRedo}>
+          Redo
+        </Button>
+        <Button size="sm" variant="secondary" onClick={onDelete} disabled={!canDelete}>
+          Delete
+        </Button>
       </Stack>
 
       <Stack direction="row" gap="sm">

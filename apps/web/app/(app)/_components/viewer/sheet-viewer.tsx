@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge, Stack } from '@takeoff/ui';
 import type {
   ConditionView,
@@ -12,12 +12,24 @@ import { LayeredViewer } from './layered-viewer';
 import { MeasurementToolbar, type ToolMode } from './measurement-toolbar';
 import type { OverlayMeasurement } from './hit-test';
 import type { LiveQuantity } from './drawing';
+import {
+  canRedo,
+  canUndo,
+  emptyHistory,
+  project,
+  reconcile,
+  record,
+  redo,
+  undo,
+  type Direction,
+  type EditCommand,
+} from './history';
 
 /**
- * Sheet viewer page body (P1-06/07/09): fetches the sheet + its conditions + measurements, then
- * renders the deep-zoom viewer with the measurement toolbar wired end-to-end — pick a tool, set
- * the scale, choose/create a condition, draw, and the committed measurement lands on the overlay.
- * Quantities stay server-authoritative: the client only ships geometry and re-reads the result.
+ * Sheet viewer page body (P1-06/07/09/12): fetches the sheet + its conditions + measurements, then
+ * renders the deep-zoom viewer with the measurement toolbar and session-scoped undo/redo wired
+ * end-to-end. Edits apply optimistically and reconcile with the server — quantities stay
+ * server-authoritative, and a failed sync reverts the local set rather than leaving phantom geometry.
  */
 
 function toOverlay(m: MeasurementView): OverlayMeasurement {
@@ -28,6 +40,19 @@ async function getJson<T>(url: string): Promise<T> {
   const r = await fetch(url, { headers: { accept: 'application/json' } });
   if (!r.ok) throw new Error(`status ${r.status}`);
   return (await r.json()) as T;
+}
+
+/** The server call that effects a command in a direction (do=redo/forward, undo=inverse). */
+function serverCall(cmd: EditCommand, direction: Direction): Promise<Response> {
+  const del = (id: string) => fetch(`/api/v1/measurements/${id}`, { method: 'DELETE' });
+  const restore = (id: string) => fetch(`/api/v1/measurements/${id}/restore`, { method: 'POST' });
+  // CREATE: forward = the row exists (restore after an undo); inverse = soft-delete.
+  // DELETE: forward = soft-delete; inverse = restore.
+  if (cmd.kind === 'CREATE')
+    return direction === 'do' ? restore(cmd.measurement.id) : del(cmd.measurement.id);
+  if (cmd.kind === 'DELETE')
+    return direction === 'do' ? del(cmd.measurement.id) : restore(cmd.measurement.id);
+  return Promise.reject(new Error(`Unsupported command ${cmd.kind}`));
 }
 
 export function SheetViewer({ sheetId }: { sheetId: string }) {
@@ -41,6 +66,12 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
   const [calibrating, setCalibrating] = useState(false);
   const [readout, setReadout] = useState<LiveQuantity | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [history, setHistory] = useState(emptyHistory);
+
+  // Mirror the live set into a ref so optimistic reverts can snapshot it synchronously.
+  const measurementsRef = useRef(measurements);
+  measurementsRef.current = measurements;
 
   const loadSheet = useCallback(
     () => getJson<{ sheet: SheetView }>(`/api/v1/sheets/${sheetId}`).then((d) => setSheet(d.sheet)),
@@ -77,6 +108,26 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
   }, [conditions]);
 
   const scaleConfirmed = sheet?.scaleStatus === 'CONFIRMED';
+
+  /** Apply a command optimistically and reconcile with the server; revert + notify on failure. */
+  const applyEdit = useCallback(
+    async (cmd: EditCommand, direction: Direction): Promise<boolean> => {
+      const snapshot = measurementsRef.current;
+      const projected = project(snapshot, cmd, direction);
+      setMeasurements(projected); // optimistic
+      let confirmed = false;
+      try {
+        const r = await serverCall(cmd, direction);
+        confirmed = r.ok;
+      } catch {
+        confirmed = false;
+      }
+      setMeasurements(reconcile(snapshot, projected, confirmed));
+      if (!confirmed) setNotice('Could not sync that change — reverted.');
+      return confirmed;
+    },
+    [],
+  );
 
   const handleCommit = useCallback(
     (geometry: MeasurementGeometry) => {
@@ -116,17 +167,69 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
         setNotice('Pick or create a condition before drawing.');
         return;
       }
+      // Create is server-first so we never record a phantom: the row's id comes back, then we
+      // append it locally and push a CREATE onto the undo stack.
       void fetch(`/api/v1/conditions/${activeConditionId}/measurements`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ sheetId, geometry }),
       })
-        .then((r) => (r.ok ? loadMeasurements() : Promise.reject(new Error(`commit ${r.status}`))))
-        .then(() => setNotice(null))
+        .then((r) =>
+          r.ok
+            ? (r.json() as Promise<{ measurement: MeasurementView }>)
+            : Promise.reject(new Error(`commit ${r.status}`)),
+        )
+        .then(({ measurement }) => {
+          const ov = toOverlay(measurement);
+          setMeasurements((ms) => [...ms, ov]);
+          setHistory((h) => record(h, { kind: 'CREATE', measurement: ov }));
+          setNotice(null);
+        })
         .catch(() => setNotice('Could not save measurement.'));
     },
-    [calibrating, activeConditionId, sheetId, loadSheet, loadMeasurements],
+    [calibrating, activeConditionId, sheetId, loadSheet],
   );
+
+  const handleDelete = useCallback(async () => {
+    const targets = measurementsRef.current.filter((m) => selectedIds.includes(m.id));
+    for (const measurement of targets) {
+      const cmd: EditCommand = { kind: 'DELETE', measurement };
+      // Sequential awaits keep each optimistic snapshot clean (one in-flight edit at a time).
+      if (await applyEdit(cmd, 'do')) setHistory((h) => record(h, cmd));
+    }
+    setSelectedIds([]);
+  }, [selectedIds, applyEdit]);
+
+  const handleUndo = useCallback(async () => {
+    const step = undo(history);
+    if (!step) return;
+    if (await applyEdit(step.command, 'undo')) setHistory(step.history);
+  }, [history, applyEdit]);
+
+  const handleRedo = useCallback(async () => {
+    const step = redo(history);
+    if (!step) return;
+    if (await applyEdit(step.command, 'do')) setHistory(step.history);
+  }, [history, applyEdit]);
+
+  // Keyboard: Ctrl/Cmd+Z undo, Ctrl+Y or Ctrl/Cmd+Shift+Z redo — but never while typing in a field.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const target = e.target as HTMLElement | null;
+      if (target && /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName)) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        void handleUndo();
+      } else if (key === 'y' || (key === 'z' && e.shiftKey)) {
+        e.preventDefault();
+        void handleRedo();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleUndo, handleRedo]);
 
   const handleNewCondition = useCallback(
     (input: { name: string; measurementType: string; unit: string }) => {
@@ -190,6 +293,12 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
         calibrating={calibrating}
         scaleConfirmed={scaleConfirmed}
         readout={readout}
+        canUndo={canUndo(history)}
+        canRedo={canRedo(history)}
+        onUndo={() => void handleUndo()}
+        onRedo={() => void handleRedo()}
+        canDelete={selectedIds.length > 0}
+        onDelete={() => void handleDelete()}
       />
       {notice ? <span className="muted">{notice}</span> : null}
 
@@ -200,6 +309,7 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
         {...(sheet.unitPerPixel != null ? { unitPerPixel: sheet.unitPerPixel } : {})}
         onCommit={handleCommit}
         onDrawingChange={setReadout}
+        onSelectionChange={setSelectedIds}
       />
     </Stack>
   );

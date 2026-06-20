@@ -122,6 +122,22 @@ export const measurementsService = {
     return { measurement, rollup };
   },
 
+  /**
+   * Reverse a soft-delete (undo-delete / redo-create, P1-12). Idempotent: restoring a live row is a
+   * no-op. The row keeps its id, so a whole undo/redo history stays stable and rollups recover exactly.
+   */
+  async restore(tx: OrgScopedTx, id: string): Promise<MeasurementResult> {
+    const existing = await measurementsRepo.getByIdWithDeleted(tx, id);
+    if (!existing) {
+      throw NotFound();
+    }
+    const measurement = existing.deleted_at
+      ? ((await measurementsRepo.restore(tx, id)) ?? existing)
+      : existing;
+    const rollup = await recomputeRollup(tx, measurement.condition_id);
+    return { measurement, rollup };
+  },
+
   async remove(tx: OrgScopedTx, id: string): Promise<QuantityRollup> {
     const existing = await measurementsRepo.getById(tx, id);
     if (!existing) {

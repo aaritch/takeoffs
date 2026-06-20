@@ -119,6 +119,39 @@ describe('quantity rollups (server-authoritative)', () => {
     expect(afterDelete.measurement_count).toBe(1);
   });
 
+  it('restore reverses a delete with the SAME id and recovers the rollup exactly (undo, P1-12)', async () => {
+    const { orgId, conditionId } = await setupCondition({
+      name: 'Slab',
+      measurement_type: 'AREA',
+      unit: 'SF',
+    });
+
+    const created = await withOrgScope(app.db, orgId, (tx) =>
+      measurementsService.create(tx, {
+        condition_id: conditionId,
+        geometry: square(100),
+        unit_per_pixel: UPP,
+      }),
+    );
+    const id = created.measurement.id;
+
+    const afterDelete = await withOrgScope(app.db, orgId, (tx) =>
+      measurementsService.remove(tx, id),
+    );
+    expect(afterDelete.base_quantity).toBe(0);
+    expect(afterDelete.measurement_count).toBe(0);
+
+    const restored = await withOrgScope(app.db, orgId, (tx) => measurementsService.restore(tx, id));
+    expect(restored.measurement.id).toBe(id); // same row — history stays stable
+    expect(restored.rollup.base_quantity).toBe(2500);
+    expect(restored.rollup.measurement_count).toBe(1);
+
+    // Restoring a live row is a no-op (idempotent redo).
+    const again = await withOrgScope(app.db, orgId, (tx) => measurementsService.restore(tx, id));
+    expect(again.rollup.base_quantity).toBe(2500);
+    expect(again.rollup.measurement_count).toBe(1);
+  });
+
   it('derives the total from geometry alone — no client total is accepted', async () => {
     // CreateMeasurementInput exposes only geometry + scale; there is no field through which a
     // client could assert a quantity. The stored rollup equals the server-computed value.

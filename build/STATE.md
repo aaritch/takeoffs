@@ -103,7 +103,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P1-09 | Manual measurement tools | P1-08 | no | aarit | DONE |
 | P1-10 | Conditions, units, and factors | P0-10, P1-08 | no | aarit | DONE |
 | P1-11 | Server-authoritative quantity rollups | P1-09, P1-10 | YES | aarit | DONE |
-| P1-12 | Undo/redo | P1-09 | no | - | NOT_STARTED |
+| P1-12 | Undo/redo | P1-09 | no | aarit | IN_PROGRESS |
 | P1-13 | Reports and exports | P1-11 | no | - | NOT_STARTED |
 | P1-14 | Export-vs-rollup parity | P1-13 | YES | - | NOT_STARTED |
 

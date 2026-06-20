@@ -19,6 +19,21 @@ export const measurementsRepo = {
     });
   },
 
+  /** Find a measurement regardless of soft-delete state — used to restore on undo (P1-12). */
+  async getByIdWithDeleted(tx: OrgScopedTx, id: string): Promise<Measurement | undefined> {
+    return tx.query.measurements.findFirst({ where: eq(measurements.id, id) });
+  },
+
+  /** Clear a soft-delete, bringing the row (and its quantity) back. Returns the live row. */
+  async restore(tx: OrgScopedTx, id: string): Promise<Measurement | undefined> {
+    const [row] = await tx
+      .update(measurements)
+      .set({ deleted_at: null, updated_at: new Date() })
+      .where(eq(measurements.id, id))
+      .returning();
+    return row;
+  },
+
   /** All live measurements on a sheet, for the viewer overlay (P1-07/P1-09). */
   async listBySheet(tx: OrgScopedTx, sheetId: string): Promise<Measurement[]> {
     return tx.query.measurements.findMany({

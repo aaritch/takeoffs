@@ -22,6 +22,12 @@ function renderToolbar(overrides: Partial<Parameters<typeof MeasurementToolbar>[
     calibrating: false,
     scaleConfirmed: false,
     readout: null,
+    canUndo: false,
+    canRedo: false,
+    onUndo: vi.fn(),
+    onRedo: vi.fn(),
+    canDelete: false,
+    onDelete: vi.fn(),
     ...overrides,
   };
   return { props, ...render(<MeasurementToolbar {...props} />) };
@@ -59,5 +65,21 @@ describe('MeasurementToolbar', () => {
   it('renders the live readout when drawing', () => {
     renderToolbar({ readout: { kind: 'length', geometric: 200, real: 25 } });
     expect(screen.getByText('25.0 ft')).toBeTruthy();
+  });
+
+  it('disables undo/redo/delete until each is available, then fires their callbacks', () => {
+    const { props, rerender } = renderToolbar();
+    expect((screen.getByRole('button', { name: 'Undo' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Delete' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+
+    rerender(<MeasurementToolbar {...props} canUndo canRedo canDelete />);
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(props.onUndo).toHaveBeenCalled();
+    expect(props.onRedo).toHaveBeenCalled();
+    expect(props.onDelete).toHaveBeenCalled();
   });
 });
