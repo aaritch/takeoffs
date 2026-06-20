@@ -1,5 +1,13 @@
-import { pgTable, text, integer, uuid, index, uniqueIndex } from 'drizzle-orm/pg-core';
-import type { Discipline, MetadataSource, ScaleStatus } from '@takeoff/contracts';
+import {
+  pgTable,
+  text,
+  integer,
+  doublePrecision,
+  uuid,
+  index,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
+import type { Discipline, MetadataSource, ScaleStatus, ScaleUnits } from '@takeoff/contracts';
 import { primaryId, timestamps } from './columns';
 import { organizations } from './accounts';
 import { planSets } from './plan-sets';
@@ -42,6 +50,10 @@ export const sheets = pgTable(
     tile_pyramid_key: text('tile_pyramid_key'),
     thumbnail_key: text('thumbnail_key'),
     scale_status: text('scale_status').$type<ScaleStatus>().notNull().default('UNSET'),
+    // Scale (P1-08/P1-09): real-world FEET per normalized pixel + the user's measurement system.
+    // Null until calibrated; quantities for length/area need a CONFIRMED scale (the scale gate).
+    unit_per_pixel: doublePrecision('unit_per_pixel'),
+    scale_units: text('scale_units').$type<ScaleUnits>(),
     ...timestamps,
   },
   (t) => [

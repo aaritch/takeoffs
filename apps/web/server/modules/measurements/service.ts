@@ -3,6 +3,7 @@ import {
   type GeometryType,
   type MeasurementSource,
   type MeasurementType,
+  type MeasurementView,
 } from '@takeoff/contracts';
 import type { OrgScopedTx } from '../../data/org-scope';
 import { conditionsRepo } from '../conditions/repository';
@@ -24,6 +25,20 @@ export interface CreateMeasurementInput {
 export interface MeasurementResult {
   measurement: Measurement;
   rollup: QuantityRollup;
+}
+
+export function measurementToView(m: Measurement): MeasurementView {
+  return {
+    id: m.id,
+    conditionId: m.condition_id,
+    sheetId: m.sheet_id,
+    geomType: m.geom_type,
+    geometry: m.geometry,
+    rawValue: m.raw_value,
+    source: m.source,
+    reviewStatus: m.review_status,
+    createdAt: m.created_at.toISOString(),
+  };
 }
 
 /** Which geometry kinds a condition of each measurement type accepts. */

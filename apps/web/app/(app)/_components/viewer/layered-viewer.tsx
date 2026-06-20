@@ -1,10 +1,20 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { MeasurementGeometry } from '@takeoff/contracts';
 import { Viewport, type Size } from './viewport';
 import { drawTiles } from './tile-render';
 import { drawVectors } from './vector-render';
 import { pickAtScreen, type OverlayMeasurement } from './hit-test';
+import {
+  addVertex,
+  finishDrawing,
+  liveQuantity,
+  startDrawing,
+  type DrawingState,
+  type LiveQuantity,
+  type ToolKind,
+} from './drawing';
 
 /**
  * The composed sheet viewer (P1-06 + P1-07): a tile layer and a vector overlay stacked on ONE
@@ -37,12 +47,24 @@ export function LayeredViewer({
   colorFor = defaultColorFor,
   onSelectionChange,
   tileUrl: tileUrlProp,
+  activeTool = null,
+  unitPerPixel,
+  onCommit,
+  onDrawingChange,
 }: {
   sheet: ViewerSheet;
   measurements?: OverlayMeasurement[];
   colorFor?: (conditionId: string) => string;
   onSelectionChange?: (ids: string[]) => void;
   tileUrl?: (level: number, col: number, row: number) => string;
+  /** When set, clicks place vertices for this tool instead of selecting (P1-09). */
+  activeTool?: ToolKind | null;
+  /** Sheet scale for the live readout (feet per normalized pixel). */
+  unitPerPixel?: number;
+  /** Called with a finished geometry to persist (double-click for line/area; per-click for count). */
+  onCommit?: (geometry: MeasurementGeometry) => void;
+  /** Live length/area/count of the in-progress drawing (null when not drawing). */
+  onDrawingChange?: (q: LiveQuantity | null) => void;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const tileCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -53,6 +75,7 @@ export function LayeredViewer({
   const [container, setContainer] = useState<Size>({ width: 0, height: 0 });
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   const [grabbing, setGrabbing] = useState(false);
+  const [draft, setDraft] = useState<DrawingState | null>(null);
 
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   const tileUrl = useCallback(
@@ -77,8 +100,17 @@ export function LayeredViewer({
         tileUrl,
         onTileLoad: () => requestAnimationFrame(drawAll),
       });
-    if (oc) drawVectors(oc, { viewport, container, dpr, measurements, selectedIds, colorFor });
-  }, [sheet, viewport, container, dpr, tileUrl, measurements, selectedIds, colorFor]);
+    if (oc)
+      drawVectors(oc, {
+        viewport,
+        container,
+        dpr,
+        measurements,
+        selectedIds,
+        colorFor,
+        ...(draft ? { draft: { tool: draft.tool, vertices: draft.vertices } } : {}),
+      });
+  }, [sheet, viewport, container, dpr, tileUrl, measurements, selectedIds, colorFor, draft]);
 
   useEffect(() => {
     cacheRef.current = new Map();
@@ -112,6 +144,14 @@ export function LayeredViewer({
     onSelectionChange?.([...selectedIds]);
   }, [selectedIds, onSelectionChange]);
 
+  // Start/stop a drawing when the active tool changes; report the live readout while drawing.
+  useEffect(() => {
+    setDraft(activeTool ? startDrawing(activeTool) : null);
+  }, [activeTool]);
+  useEffect(() => {
+    onDrawingChange?.(draft ? liveQuantity(draft, unitPerPixel) : null);
+  }, [draft, unitPerPixel, onDrawingChange]);
+
   const dragRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const local = (e: { clientX: number; clientY: number }): { x: number; y: number } => {
     const r = wrapRef.current!.getBoundingClientRect();
@@ -142,6 +182,22 @@ export function LayeredViewer({
     dragRef.current = null;
     setGrabbing(false);
     if (!drag || drag.moved || !viewport) return; // a drag was a pan, not a click
+
+    // Drawing mode: a click places a vertex (count commits immediately; line/area on double-click).
+    if (activeTool) {
+      const world = viewport.screenToWorld(local(e));
+      const next = addVertex(draft ?? startDrawing(activeTool), world, { ortho: e.shiftKey });
+      if (activeTool === 'COUNT') {
+        const r = finishDrawing(next);
+        if (r.ok) onCommit?.(r.geometry);
+        setDraft(startDrawing('COUNT'));
+      } else {
+        setDraft(next);
+      }
+      return;
+    }
+
+    // Selection mode.
     const id = pickAtScreen(measurements, local(e), viewport, PICK_PX);
     const additive = e.shiftKey || e.metaKey || e.ctrlKey;
     setSelectedIds((prev) => {
@@ -152,6 +208,14 @@ export function LayeredViewer({
       }
       return next;
     });
+  };
+  const onDoubleClick = () => {
+    if (!activeTool || activeTool === 'COUNT' || !draft) return;
+    const r = finishDrawing(draft);
+    if (r.ok) {
+      onCommit?.(r.geometry);
+      setDraft(startDrawing(activeTool));
+    }
   };
   const onWheel = (e: React.WheelEvent) => {
     const point = local(e);
@@ -167,6 +231,7 @@ export function LayeredViewer({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
+      onDoubleClick={onDoubleClick}
       style={{
         position: 'relative',
         width: '100%',

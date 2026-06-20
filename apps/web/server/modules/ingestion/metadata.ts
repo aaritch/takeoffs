@@ -33,6 +33,8 @@ export function sheetToView(s: Sheet): SheetView {
     tilePyramidKey: s.tile_pyramid_key,
     thumbnailKey: s.thumbnail_key,
     scaleStatus: s.scale_status,
+    unitPerPixel: s.unit_per_pixel,
+    scaleUnits: s.scale_units,
     createdAt: s.created_at.toISOString(),
   };
 }

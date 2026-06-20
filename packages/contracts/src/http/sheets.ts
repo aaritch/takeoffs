@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Discipline, ScaleStatus } from '../enums/projects';
+import { Discipline, ScaleStatus, ScaleUnits } from '../enums/projects';
 
 /** Sheet HTTP shapes (P1-04). Metadata fields are user-editable candidates. */
 
@@ -17,6 +17,9 @@ export const SheetView = z.object({
   tilePyramidKey: z.string().nullable(),
   thumbnailKey: z.string().nullable(),
   scaleStatus: ScaleStatus,
+  /** Feet per normalized pixel once calibrated; null until then. */
+  unitPerPixel: z.number().positive().nullable(),
+  scaleUnits: ScaleUnits.nullable(),
   createdAt: z.string().datetime(),
 });
 export type SheetView = z.infer<typeof SheetView>;

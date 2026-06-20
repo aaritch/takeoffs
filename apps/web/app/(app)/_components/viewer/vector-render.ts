@@ -17,6 +17,34 @@ export interface VectorDrawParams {
   measurements: OverlayMeasurement[];
   selectedIds: ReadonlySet<string>;
   colorFor: (conditionId: string) => string;
+  /** The in-progress drawing (P1-09), rendered dashed on top so the user sees what they're placing. */
+  draft?: { tool: 'LINEAR' | 'AREA' | 'COUNT'; vertices: Point[] };
+}
+
+function drawDraft(
+  ctx: CanvasRenderingContext2D,
+  draft: NonNullable<VectorDrawParams['draft']>,
+  toScreen: (p: Point) => Point,
+): void {
+  const pts = draft.vertices.map(toScreen);
+  ctx.save();
+  ctx.strokeStyle = '#111';
+  ctx.fillStyle = '#111';
+  ctx.lineWidth = 1.75;
+  ctx.setLineDash([5, 4]);
+  if ((draft.tool === 'LINEAR' || draft.tool === 'AREA') && pts.length >= 2) {
+    ctx.beginPath();
+    pts.forEach((s, i) => (i === 0 ? ctx.moveTo(s.x, s.y) : ctx.lineTo(s.x, s.y)));
+    if (draft.tool === 'AREA') ctx.closePath();
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  for (const s of pts) {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function dot(ctx: CanvasRenderingContext2D, s: Point, r: number): void {
@@ -93,4 +121,6 @@ export function drawVectors(canvas: HTMLCanvasElement, p: VectorDrawParams): voi
       }
     }
   }
+
+  if (p.draft && p.draft.vertices.length > 0) drawDraft(ctx, p.draft, S);
 }

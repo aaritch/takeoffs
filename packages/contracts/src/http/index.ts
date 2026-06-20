@@ -5,5 +5,6 @@ export * from './pagination';
 export * from './projects';
 export * from './plan-sets';
 export * from './processing';
+export * from './measurements';
 export * from './sheets';
 export * from './uploads';
