@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { AuthContext } from '@takeoff/auth';
-import type { ErrorEnvelope, FieldError } from '@takeoff/contracts';
+import type { CustomerRole, ErrorEnvelope, FieldError } from '@takeoff/contracts';
 import { auth } from '@/auth';
 import { getDb } from '../data/client';
 import { resolveAuthContext } from '../modules/accounts/auth-context';
@@ -30,6 +30,8 @@ export class ApiError extends Error {
 export interface ApiActor {
   userId: string;
   orgId: string;
+  /** The actor's role in the resolved org — recorded on audit/feedback rows. */
+  role: CustomerRole;
 }
 
 const HEADER_ORG = 'x-org-id';
@@ -84,7 +86,8 @@ export function apiHandler(
       if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Sign in required.');
       const authCtx = await resolveAuthContext(getDb(), userId);
       const orgId = resolveOrg(request, authCtx);
-      return await fn({ userId, orgId });
+      const role = authCtx.membershipsByOrg.get(orgId)!;
+      return await fn({ userId, orgId, role });
     } catch (err) {
       const { status, body } = mapError(err);
       return NextResponse.json(body, { status });

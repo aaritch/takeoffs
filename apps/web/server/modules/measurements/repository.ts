@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, count, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
 import type { OrgScopedTx } from '../../data/org-scope';
 import { measurements } from '../../data/schema';
 
@@ -38,6 +38,23 @@ export const measurementsRepo = {
   async listBySheet(tx: OrgScopedTx, sheetId: string): Promise<Measurement[]> {
     return tx.query.measurements.findMany({
       where: and(eq(measurements.sheet_id, sheetId), isNull(measurements.deleted_at)),
+    });
+  },
+
+  /** Live UNREVIEWED AI candidates in a condition at or above a confidence — for bulk-accept (P2-10). */
+  async listUnreviewedAiByCondition(
+    tx: OrgScopedTx,
+    conditionId: string,
+    minConfidence: number,
+  ): Promise<Measurement[]> {
+    return tx.query.measurements.findMany({
+      where: and(
+        eq(measurements.condition_id, conditionId),
+        eq(measurements.source, 'AI'),
+        eq(measurements.review_status, 'UNREVIEWED'),
+        gte(measurements.ai_confidence, minConfidence),
+        isNull(measurements.deleted_at),
+      ),
     });
   },
 

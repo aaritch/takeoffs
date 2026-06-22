@@ -12,3 +12,4 @@ export * from './measurements';
 export * from './quantity-rollups';
 export * from './reports';
 export * from './model-runs';
+export * from './detection-feedback';

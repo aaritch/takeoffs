@@ -50,6 +50,14 @@ const ALLOWED_GEOM: Readonly<Record<MeasurementType, GeometryType[]>> = {
   SURFACE_AREA: [], // model as a LINEAR condition + height
 };
 
+/** Whether a geometry kind is valid for a condition's measurement type (the same rule create uses). */
+export function isGeometryAllowedForType(
+  measurementType: MeasurementType,
+  geomType: GeometryType,
+): boolean {
+  return ALLOWED_GEOM[measurementType].includes(geomType);
+}
+
 export const measurementsService = {
   async create(tx: OrgScopedTx, input: CreateMeasurementInput): Promise<MeasurementResult> {
     const geometry = MeasurementGeometry.parse(input.geometry);

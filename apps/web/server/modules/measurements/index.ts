@@ -1,7 +1,7 @@
 // Measurements module (P1-11) — create/edit/delete measurements (geometry only; the server
 // computes the authoritative raw_value) and the server-authoritative QuantityRollup that is
 // recomputed from the full measurement set on every change. The client never supplies a total.
-export { measurementsService, measurementToView } from './service';
+export { measurementsService, measurementToView, isGeometryAllowedForType } from './service';
 export type { CreateMeasurementInput, MeasurementResult } from './service';
 export { computeRawValue } from './geometry';
 export { recomputeRollup, getRollup } from './rollup';
