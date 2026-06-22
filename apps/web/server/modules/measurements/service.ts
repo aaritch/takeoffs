@@ -37,6 +37,8 @@ export function measurementToView(m: Measurement): MeasurementView {
     rawValue: m.raw_value,
     source: m.source,
     reviewStatus: m.review_status,
+    aiConfidence: m.ai_confidence,
+    modelRunId: m.model_run_id,
     createdAt: m.created_at.toISOString(),
   };
 }

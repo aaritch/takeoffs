@@ -84,11 +84,19 @@ export function drawVectors(canvas: HTMLCanvasElement, p: VectorDrawParams): voi
 
   for (const m of p.measurements) {
     const selected = p.selectedIds.has(m.id);
+    const candidate = m.isCandidate === true;
     const color = p.colorFor(m.conditionId);
+    ctx.save();
     ctx.strokeStyle = color;
     ctx.fillStyle = color;
     ctx.lineWidth = selected ? 3.5 : 1.75;
     ctx.lineJoin = 'round';
+    // AI candidates read as provisional: dashed outline + dimmed, unmistakably distinct from
+    // accepted/manual measurements at any zoom (the dash is in screen px, so it stays constant).
+    if (candidate) {
+      ctx.setLineDash([6, 4]);
+      ctx.globalAlpha = selected ? 0.85 : 0.55;
+    }
 
     const g = m.geometry;
     switch (g.type) {
@@ -113,13 +121,14 @@ export function drawVectors(canvas: HTMLCanvasElement, p: VectorDrawParams): voi
         ring(ctx, g.exterior, S);
         for (const h of g.holes ?? []) ring(ctx, h, S);
         ctx.save();
-        ctx.globalAlpha = selected ? 0.25 : 0.12;
+        ctx.globalAlpha = (selected ? 0.25 : 0.12) * (candidate ? 0.6 : 1);
         ctx.fill('evenodd');
         ctx.restore();
         ctx.stroke();
         break;
       }
     }
+    ctx.restore();
   }
 
   if (p.draft && p.draft.vertices.length > 0) drawDraft(ctx, p.draft, S);

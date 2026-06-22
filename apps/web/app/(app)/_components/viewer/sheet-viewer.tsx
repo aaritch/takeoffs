@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Stack } from '@takeoff/ui';
 import type {
   ConditionView,
@@ -8,6 +8,7 @@ import type {
   MeasurementView,
   SheetView,
 } from '@takeoff/contracts';
+import { CandidateReviewBar } from './candidate-review-bar';
 import { LayeredViewer } from './layered-viewer';
 import { MeasurementToolbar, type ToolMode } from './measurement-toolbar';
 import type { OverlayMeasurement } from './hit-test';
@@ -33,7 +34,14 @@ import {
  */
 
 function toOverlay(m: MeasurementView): OverlayMeasurement {
-  return { id: m.id, conditionId: m.conditionId, geometry: m.geometry };
+  return {
+    id: m.id,
+    conditionId: m.conditionId,
+    geometry: m.geometry,
+    // An UNREVIEWED AI candidate renders dashed/translucent; manual + reviewed rows render solid.
+    isCandidate: m.source === 'AI' && m.reviewStatus === 'UNREVIEWED',
+    confidence: m.aiConfidence,
+  };
 }
 
 async function getJson<T>(url: string): Promise<T> {
@@ -87,7 +95,11 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
   const loadMeasurements = useCallback(
     () =>
       getJson<{ measurements: MeasurementView[] }>(`/api/v1/sheets/${sheetId}/measurements`).then(
-        (d) => setMeasurements(d.measurements.map(toOverlay)),
+        // Rejected candidates are kept server-side (with feedback) but not drawn.
+        (d) =>
+          setMeasurements(
+            d.measurements.filter((m) => m.reviewStatus !== 'REJECTED').map(toOverlay),
+          ),
       ),
     [sheetId],
   );
@@ -255,6 +267,28 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
     setNotice('Draw a line of known length, then double-click to finish.');
   }, []);
 
+  // The single selected AI candidate, if exactly one candidate is selected (drives the review bar).
+  const selectedCandidate = useMemo(() => {
+    if (selectedIds.length !== 1) return null;
+    const m = measurements.find((x) => x.id === selectedIds[0]);
+    return m?.isCandidate ? m : null;
+  }, [selectedIds, measurements]);
+
+  const handleReview = useCallback(
+    (id: string, action: 'accept' | 'reject') => {
+      void fetch(`/api/v1/measurements/${id}/${action}`, { method: 'POST' })
+        .then((r) =>
+          r.ok ? loadMeasurements() : Promise.reject(new Error(`${action} ${r.status}`)),
+        )
+        .then(() => {
+          setSelectedIds([]);
+          setNotice(action === 'accept' ? 'Candidate accepted.' : 'Candidate rejected.');
+        })
+        .catch(() => setNotice(`Could not ${action} the candidate.`));
+    },
+    [loadMeasurements],
+  );
+
   if (error)
     return (
       <p role="alert" className="error">
@@ -300,6 +334,13 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
         canDelete={selectedIds.length > 0}
         onDelete={() => void handleDelete()}
       />
+      {selectedCandidate ? (
+        <CandidateReviewBar
+          confidence={selectedCandidate.confidence}
+          onAccept={() => handleReview(selectedCandidate.id, 'accept')}
+          onReject={() => handleReview(selectedCandidate.id, 'reject')}
+        />
+      ) : null}
       {notice ? <span className="muted">{notice}</span> : null}
 
       <LayeredViewer

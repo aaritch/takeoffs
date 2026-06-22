@@ -35,6 +35,10 @@ export const MeasurementView = z.object({
   rawValue: z.number(),
   source: MeasurementSource,
   reviewStatus: ReviewStatus,
+  /** AI candidate confidence in [0, 1]; null for manual measurements. */
+  aiConfidence: z.number().min(0).max(1).nullable(),
+  /** The run that produced this candidate; null for manual measurements. */
+  modelRunId: z.string().uuid().nullable(),
   createdAt: z.string().datetime(),
 });
 export type MeasurementView = z.infer<typeof MeasurementView>;

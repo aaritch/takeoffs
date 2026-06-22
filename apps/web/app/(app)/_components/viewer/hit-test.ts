@@ -13,6 +13,10 @@ export interface OverlayMeasurement {
   id: string;
   conditionId: string;
   geometry: MeasurementGeometry;
+  /** An UNREVIEWED AI candidate — drawn dashed/translucent, distinct from accepted measurements (P2-09). */
+  isCandidate?: boolean;
+  /** Candidate confidence in [0, 1], for the hover readout. */
+  confidence?: number | null;
 }
 
 const dist = (a: Point, b: Point): number => Math.hypot(a.x - b.x, a.y - b.y);
