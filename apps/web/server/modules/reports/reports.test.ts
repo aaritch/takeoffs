@@ -15,7 +15,14 @@ import { measurementsService } from '../measurements';
 import { projectsRepo } from '../projects/repository';
 import { takeoffsRepo } from '../takeoffs/repository';
 import { seedGlobalTradeData } from '../trades/seed';
-import { drainExportOne, generateReport, reportsService } from './index';
+import {
+  buildReportData,
+  checkParity,
+  drainExportOne,
+  generateReport,
+  renderReport,
+  reportsService,
+} from './index';
 
 // The enqueue path reads REDIS_URL via getRedis(); default it like the ingestion test so the file
 // is self-sufficient regardless of the vitest worker's ambient env.
@@ -191,6 +198,20 @@ describe('report generation (P1-13)', () => {
         reportsService.requestReport(tx, { takeoffId, template: 'MARKED_PLANS' }),
       ),
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED', field: 'template' });
+  });
+
+  it('GATE: a representative takeoff reconciles to the rollups across every template (P1-14)', async () => {
+    const { orgId, takeoffId } = await setupTakeoff('gate');
+    await addPricedCondition(orgId, takeoffId, 'Slab', 100, 350); // priced
+    await addPricedCondition(orgId, takeoffId, 'Curb', 60, 1200); // priced
+    await addPricedCondition(orgId, takeoffId, 'Walk', 33); // unpriced (null extended cost)
+
+    // Build the report data from the AUTHORITATIVE rollups, render every template, reconcile each.
+    const data = await withOrgScope(app.db, orgId, (tx) => buildReportData(tx, takeoffId));
+    for (const template of ['SUMMARY', 'DETAILED', 'BY_TRADE'] as const) {
+      const csv = renderReport(template, data);
+      expect(checkParity(template, csv, data)).toEqual([]);
+    }
   });
 
   it('generates a large takeoff (many conditions) without inlining the work', async () => {

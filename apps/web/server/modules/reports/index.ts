@@ -12,3 +12,5 @@ export { drainExportOne } from './consumer';
 export { buildReportData } from './data';
 export { renderReport, totalExtendedCostMinor } from './render';
 export type { ReportConditionRow, ReportData } from './render';
+export { checkParity, assertExportParity } from './parity';
+export type { ParityMismatch } from './parity';
