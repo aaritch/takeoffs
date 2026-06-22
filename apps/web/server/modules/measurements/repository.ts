@@ -54,6 +54,28 @@ export const measurementsRepo = {
     return row;
   },
 
+  /**
+   * Soft-delete a sheet's UNREVIEWED AI candidates — the "re-running a sheet replaces its prior
+   * candidate set, never duplicates" rule (P2-03). Human-reviewed rows (ACCEPTED/REJECTED/EDITED)
+   * are decisions, not candidates, so they are left untouched.
+   */
+  async softDeleteAiCandidatesForSheet(tx: OrgScopedTx, sheetId: string): Promise<number> {
+    const now = new Date();
+    const rows = await tx
+      .update(measurements)
+      .set({ deleted_at: now, updated_at: now })
+      .where(
+        and(
+          eq(measurements.sheet_id, sheetId),
+          eq(measurements.source, 'AI'),
+          eq(measurements.review_status, 'UNREVIEWED'),
+          isNull(measurements.deleted_at),
+        ),
+      )
+      .returning({ id: measurements.id });
+    return rows.length;
+  },
+
   async softDelete(tx: OrgScopedTx, id: string): Promise<number> {
     const now = new Date();
     const rows = await tx

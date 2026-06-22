@@ -24,7 +24,11 @@ function conditionToView(c: Condition): ConditionView {
   };
 }
 
-async function resolveSheetTakeoff(tx: OrgScopedTx, sheetId: string): Promise<string> {
+/**
+ * The plan set's single default takeoff (its condition container), created lazily the first time
+ * conditions are touched for any sheet in the set. Shared by the manual toolbar and AI ingestion.
+ */
+export async function resolveSheetTakeoff(tx: OrgScopedTx, sheetId: string): Promise<string> {
   const sheet = await sheetsRepo.getById(tx, sheetId);
   if (!sheet) throw NotFound('Sheet not found');
   const existing = await takeoffsRepo.firstForPlanSet(tx, sheet.plan_set_id);

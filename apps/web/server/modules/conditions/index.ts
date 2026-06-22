@@ -3,7 +3,7 @@
 // in quantities.ts (pure, built on @takeoff/geometry); the persisted rollup over a measurement
 // set is P1-11.
 export { conditionsService } from './service';
-export { listSheetConditions, createSheetCondition } from './sheet-conditions';
+export { listSheetConditions, createSheetCondition, resolveSheetTakeoff } from './sheet-conditions';
 export type { CreateConditionInput, UpdateConditionInput } from './service';
 export { computeConditionQuantities } from './quantities';
 export type { ConditionFactors, ComputedQuantities } from './quantities';

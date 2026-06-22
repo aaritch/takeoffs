@@ -3,3 +3,4 @@
 // retriable.
 export * from './ingestion';
 export * from './export';
+export * from './inference';
