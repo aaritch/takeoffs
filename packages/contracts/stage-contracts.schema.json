@@ -1,0 +1,1921 @@
+{
+  "CLASSIFY": {
+    "input": {
+      "$ref": "#/definitions/CLASSIFYInput",
+      "definitions": {
+        "CLASSIFYInput": {
+          "type": "object",
+          "properties": {
+            "sheet": {
+              "type": "object",
+              "properties": {
+                "sheetId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "rasterKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widthPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "heightPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": ["sheetId", "rasterKey", "widthPx", "heightPx"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["sheet"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "output": {
+      "$ref": "#/definitions/CLASSIFYOutput",
+      "definitions": {
+        "CLASSIFYOutput": {
+          "type": "object",
+          "properties": {
+            "classification": {
+              "type": "object",
+              "properties": {
+                "discipline": {
+                  "type": "string",
+                  "enum": [
+                    "ARCHITECTURAL",
+                    "STRUCTURAL",
+                    "MECHANICAL",
+                    "ELECTRICAL",
+                    "PLUMBING",
+                    "CIVIL",
+                    "LANDSCAPE",
+                    "UNKNOWN"
+                  ]
+                },
+                "pageType": {
+                  "type": "string",
+                  "enum": ["PLAN", "ELEVATION", "SECTION", "DETAIL", "SCHEDULE", "TITLE", "UNKNOWN"]
+                },
+                "confidence": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": ["discipline", "pageType", "confidence"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["classification"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  "OCR": {
+    "input": {
+      "$ref": "#/definitions/OCRInput",
+      "definitions": {
+        "OCRInput": {
+          "type": "object",
+          "properties": {
+            "sheet": {
+              "type": "object",
+              "properties": {
+                "sheetId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "rasterKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widthPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "heightPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": ["sheetId", "rasterKey", "widthPx", "heightPx"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["sheet"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "output": {
+      "$ref": "#/definitions/OCROutput",
+      "definitions": {
+        "OCROutput": {
+          "type": "object",
+          "properties": {
+            "tokens": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "bbox": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      },
+                      "width": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "height": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["x", "y", "width", "height"],
+                    "additionalProperties": false
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": ["text", "bbox", "confidence"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["tokens"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  "SCALE": {
+    "input": {
+      "$ref": "#/definitions/SCALEInput",
+      "definitions": {
+        "SCALEInput": {
+          "type": "object",
+          "properties": {
+            "sheet": {
+              "type": "object",
+              "properties": {
+                "sheetId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "rasterKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widthPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "heightPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": ["sheetId", "rasterKey", "widthPx", "heightPx"],
+              "additionalProperties": false
+            },
+            "tokens": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "bbox": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      },
+                      "width": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "height": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["x", "y", "width", "height"],
+                    "additionalProperties": false
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": ["text", "bbox", "confidence"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["sheet", "tokens"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "output": {
+      "$ref": "#/definitions/SCALEOutput",
+      "definitions": {
+        "SCALEOutput": {
+          "type": "object",
+          "properties": {
+            "scale": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "unitPerPixel": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "scaleUnits": {
+                      "type": "string",
+                      "enum": ["IMPERIAL", "METRIC"]
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": ["NOTATION", "GRAPHIC_BAR", "DIMENSION_STRING"]
+                    },
+                    "confidence": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  },
+                  "required": ["unitPerPixel", "scaleUnits", "source", "confidence"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": ["scale"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  "LINES": {
+    "input": {
+      "$ref": "#/definitions/LINESInput",
+      "definitions": {
+        "LINESInput": {
+          "type": "object",
+          "properties": {
+            "sheet": {
+              "type": "object",
+              "properties": {
+                "sheetId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "rasterKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widthPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "heightPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": ["sheetId", "rasterKey", "widthPx", "heightPx"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["sheet"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "output": {
+      "$ref": "#/definitions/LINESOutput",
+      "definitions": {
+        "LINESOutput": {
+          "type": "object",
+          "properties": {
+            "lines": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/LINESOutput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/LINESOutput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/LINESOutput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/LINESOutput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": ["geometry", "objectClass", "confidence"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["lines"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  "REGIONS": {
+    "input": {
+      "$ref": "#/definitions/REGIONSInput",
+      "definitions": {
+        "REGIONSInput": {
+          "type": "object",
+          "properties": {
+            "sheet": {
+              "type": "object",
+              "properties": {
+                "sheetId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "rasterKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widthPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "heightPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": ["sheetId", "rasterKey", "widthPx", "heightPx"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["sheet"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "output": {
+      "$ref": "#/definitions/REGIONSOutput",
+      "definitions": {
+        "REGIONSOutput": {
+          "type": "object",
+          "properties": {
+            "regions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/REGIONSOutput/properties/regions/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/REGIONSOutput/properties/regions/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/REGIONSOutput/properties/regions/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/REGIONSOutput/properties/regions/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": ["geometry", "objectClass", "confidence"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["regions"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  "SYMBOLS": {
+    "input": {
+      "$ref": "#/definitions/SYMBOLSInput",
+      "definitions": {
+        "SYMBOLSInput": {
+          "type": "object",
+          "properties": {
+            "sheet": {
+              "type": "object",
+              "properties": {
+                "sheetId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "rasterKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "widthPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "heightPx": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": ["sheetId", "rasterKey", "widthPx", "heightPx"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["sheet"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "output": {
+      "$ref": "#/definitions/SYMBOLSOutput",
+      "definitions": {
+        "SYMBOLSOutput": {
+          "type": "object",
+          "properties": {
+            "symbols": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/SYMBOLSOutput/properties/symbols/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/SYMBOLSOutput/properties/symbols/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/SYMBOLSOutput/properties/symbols/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/SYMBOLSOutput/properties/symbols/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": ["geometry", "objectClass", "confidence"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["symbols"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  "VECTORIZE": {
+    "input": {
+      "$ref": "#/definitions/VECTORIZEInput",
+      "definitions": {
+        "VECTORIZEInput": {
+          "type": "object",
+          "properties": {
+            "lines": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/VECTORIZEInput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/VECTORIZEInput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/VECTORIZEInput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/VECTORIZEInput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": ["geometry", "objectClass", "confidence"],
+                "additionalProperties": false
+              }
+            },
+            "regions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VECTORIZEInput/properties/lines/items"
+              }
+            },
+            "symbols": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VECTORIZEInput/properties/lines/items"
+              }
+            }
+          },
+          "required": ["lines", "regions", "symbols"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "output": {
+      "$ref": "#/definitions/VECTORIZEOutput",
+      "definitions": {
+        "VECTORIZEOutput": {
+          "type": "object",
+          "properties": {
+            "lines": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/VECTORIZEOutput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/VECTORIZEOutput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/VECTORIZEOutput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/VECTORIZEOutput/properties/lines/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": ["geometry", "objectClass", "confidence"],
+                "additionalProperties": false
+              }
+            },
+            "regions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VECTORIZEOutput/properties/lines/items"
+              }
+            },
+            "symbols": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VECTORIZEOutput/properties/lines/items"
+              }
+            }
+          },
+          "required": ["lines", "regions", "symbols"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  "MAP": {
+    "input": {
+      "$ref": "#/definitions/MAPInput",
+      "definitions": {
+        "MAPInput": {
+          "type": "object",
+          "properties": {
+            "detections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/MAPInput/properties/detections/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/MAPInput/properties/detections/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/MAPInput/properties/detections/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/MAPInput/properties/detections/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": ["geometry", "objectClass", "confidence"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["detections"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "output": {
+      "$ref": "#/definitions/MAPOutput",
+      "definitions": {
+        "MAPOutput": {
+          "type": "object",
+          "properties": {
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/MAPOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/MAPOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/MAPOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/MAPOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "measurementType": {
+                    "type": "string",
+                    "enum": ["LINEAR", "AREA", "COUNT", "VOLUME", "SURFACE_AREA"]
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": ["LF", "SF", "SY", "CY", "CF", "EA"]
+                  },
+                  "conditionKey": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "detectionConfidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "geometry",
+                  "objectClass",
+                  "measurementType",
+                  "unit",
+                  "conditionKey",
+                  "detectionConfidence"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["candidates"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  "QUANTIFY": {
+    "input": {
+      "$ref": "#/definitions/QUANTIFYInput",
+      "definitions": {
+        "QUANTIFYInput": {
+          "type": "object",
+          "properties": {
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/QUANTIFYInput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/QUANTIFYInput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/QUANTIFYInput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/QUANTIFYInput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "measurementType": {
+                    "type": "string",
+                    "enum": ["LINEAR", "AREA", "COUNT", "VOLUME", "SURFACE_AREA"]
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": ["LF", "SF", "SY", "CY", "CF", "EA"]
+                  },
+                  "conditionKey": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "detectionConfidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "geometry",
+                  "objectClass",
+                  "measurementType",
+                  "unit",
+                  "conditionKey",
+                  "detectionConfidence"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "unitPerPixel": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["candidates", "unitPerPixel"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "output": {
+      "$ref": "#/definitions/QUANTIFYOutput",
+      "definitions": {
+        "QUANTIFYOutput": {
+          "type": "object",
+          "properties": {
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/QUANTIFYOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/QUANTIFYOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/QUANTIFYOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/QUANTIFYOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "measurementType": {
+                    "type": "string",
+                    "enum": ["LINEAR", "AREA", "COUNT", "VOLUME", "SURFACE_AREA"]
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": ["LF", "SF", "SY", "CY", "CF", "EA"]
+                  },
+                  "conditionKey": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "detectionConfidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "rawValue": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "geometry",
+                  "objectClass",
+                  "measurementType",
+                  "unit",
+                  "conditionKey",
+                  "detectionConfidence",
+                  "rawValue"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["candidates"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  "CONFIDENCE": {
+    "input": {
+      "$ref": "#/definitions/CONFIDENCEInput",
+      "definitions": {
+        "CONFIDENCEInput": {
+          "type": "object",
+          "properties": {
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/CONFIDENCEInput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/CONFIDENCEInput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/CONFIDENCEInput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/CONFIDENCEInput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "measurementType": {
+                    "type": "string",
+                    "enum": ["LINEAR", "AREA", "COUNT", "VOLUME", "SURFACE_AREA"]
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": ["LF", "SF", "SY", "CY", "CF", "EA"]
+                  },
+                  "conditionKey": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "detectionConfidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "rawValue": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "geometry",
+                  "objectClass",
+                  "measurementType",
+                  "unit",
+                  "conditionKey",
+                  "detectionConfidence",
+                  "rawValue"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["candidates"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "output": {
+      "$ref": "#/definitions/CONFIDENCEOutput",
+      "definitions": {
+        "CONFIDENCEOutput": {
+          "type": "object",
+          "properties": {
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYLINE"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "x": {
+                                  "type": "number"
+                                },
+                                "y": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["x", "y"],
+                              "additionalProperties": false
+                            },
+                            "minItems": 2
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POLYGON"
+                          },
+                          "exterior": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/CONFIDENCEOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 3
+                          },
+                          "holes": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/CONFIDENCEOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                              },
+                              "minItems": 3
+                            }
+                          }
+                        },
+                        "required": ["type", "exterior"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT"
+                          },
+                          "point": {
+                            "$ref": "#/definitions/CONFIDENCEOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                          }
+                        },
+                        "required": ["type", "point"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "POINT_GROUP"
+                          },
+                          "points": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/CONFIDENCEOutput/properties/candidates/items/properties/geometry/anyOf/0/properties/points/items"
+                            },
+                            "minItems": 1
+                          }
+                        },
+                        "required": ["type", "points"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "objectClass": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "measurementType": {
+                    "type": "string",
+                    "enum": ["LINEAR", "AREA", "COUNT", "VOLUME", "SURFACE_AREA"]
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": ["LF", "SF", "SY", "CY", "CF", "EA"]
+                  },
+                  "conditionKey": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "detectionConfidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "rawValue": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "aiConfidence": {
+                    "$ref": "#/definitions/CONFIDENCEOutput/properties/candidates/items/properties/detectionConfidence"
+                  }
+                },
+                "required": [
+                  "geometry",
+                  "objectClass",
+                  "measurementType",
+                  "unit",
+                  "conditionKey",
+                  "detectionConfidence",
+                  "rawValue",
+                  "aiConfidence"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["candidates"],
+          "additionalProperties": false
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  }
+}

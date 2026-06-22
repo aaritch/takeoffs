@@ -28,3 +28,53 @@ export const FeedbackAction = z.enum([
   'ADD_MISSED',
 ]);
 export type FeedbackAction = z.infer<typeof FeedbackAction>;
+
+/**
+ * The ordered AI pipeline stages (spec §7.2, Project-Plan §3 slugs). Each stage has a fixed
+ * input/output contract (`STAGE_CONTRACTS`) so models can be swapped without touching the
+ * orchestration (spec §7.3). The slugs map 1:1 to the spec's ten stages:
+ * CLASSIFY → OCR → SCALE → LINES → REGIONS → SYMBOLS → VECTORIZE → MAP → QUANTIFY → CONFIDENCE.
+ */
+export const StageName = z.enum([
+  'CLASSIFY',
+  'OCR',
+  'SCALE',
+  'LINES',
+  'REGIONS',
+  'SYMBOLS',
+  'VECTORIZE',
+  'MAP',
+  'QUANTIFY',
+  'CONFIDENCE',
+]);
+export type StageName = z.infer<typeof StageName>;
+
+/** Canonical execution order of the stages. */
+export const STAGE_ORDER: readonly StageName[] = [
+  'CLASSIFY',
+  'OCR',
+  'SCALE',
+  'LINES',
+  'REGIONS',
+  'SYMBOLS',
+  'VECTORIZE',
+  'MAP',
+  'QUANTIFY',
+  'CONFIDENCE',
+];
+
+/** Sheet page type predicted by the classification stage (spec §7.2 stage 1). */
+export const PageType = z.enum([
+  'PLAN',
+  'ELEVATION',
+  'SECTION',
+  'DETAIL',
+  'SCHEDULE',
+  'TITLE',
+  'UNKNOWN',
+]);
+export type PageType = z.infer<typeof PageType>;
+
+/** How the scale-detection stage derived a scale candidate (spec §7.2 stage 3). */
+export const ScaleSource = z.enum(['NOTATION', 'GRAPHIC_BAR', 'DIMENSION_STRING']);
+export type ScaleSource = z.infer<typeof ScaleSource>;

@@ -1,0 +1,189 @@
+{
+  "_comment": "Shared P2-01 fixtures: one valid sample OUTPUT payload per pipeline stage. Both the TypeScript (Zod) and Python (jsonschema, via stage-contracts.schema.json) parity tests validate these IDENTICAL payloads, proving the stage seam means the same thing on both planes. Geometry is in normalized sheet coordinates.",
+  "CLASSIFY": {
+    "output": {
+      "classification": { "discipline": "ARCHITECTURAL", "pageType": "PLAN", "confidence": 0.92 }
+    }
+  },
+  "OCR": {
+    "output": {
+      "tokens": [
+        {
+          "text": "1/8\" = 1'-0\"",
+          "bbox": { "x": 10, "y": 20, "width": 120, "height": 18 },
+          "confidence": 0.88
+        },
+        {
+          "text": "ROOM 101",
+          "bbox": { "x": 240, "y": 130, "width": 80, "height": 14 },
+          "confidence": 0.79
+        }
+      ]
+    }
+  },
+  "SCALE": {
+    "output": {
+      "scale": {
+        "unitPerPixel": 0.5,
+        "scaleUnits": "IMPERIAL",
+        "source": "NOTATION",
+        "confidence": 0.8
+      }
+    }
+  },
+  "LINES": {
+    "output": {
+      "lines": [
+        {
+          "geometry": {
+            "type": "POLYLINE",
+            "points": [
+              { "x": 0, "y": 0 },
+              { "x": 100, "y": 0 }
+            ]
+          },
+          "objectClass": "wall",
+          "confidence": 0.71
+        }
+      ]
+    }
+  },
+  "REGIONS": {
+    "output": {
+      "regions": [
+        {
+          "geometry": {
+            "type": "POLYGON",
+            "exterior": [
+              { "x": 0, "y": 0 },
+              { "x": 0, "y": 50 },
+              { "x": 50, "y": 50 },
+              { "x": 50, "y": 0 }
+            ]
+          },
+          "objectClass": "slab",
+          "confidence": 0.75
+        }
+      ]
+    }
+  },
+  "SYMBOLS": {
+    "output": {
+      "symbols": [
+        {
+          "geometry": { "type": "POINT", "point": { "x": 12, "y": 34 } },
+          "objectClass": "door",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "VECTORIZE": {
+    "output": {
+      "lines": [
+        {
+          "geometry": {
+            "type": "POLYLINE",
+            "points": [
+              { "x": 0, "y": 0 },
+              { "x": 100, "y": 0 }
+            ]
+          },
+          "objectClass": "wall",
+          "confidence": 0.71
+        }
+      ],
+      "regions": [
+        {
+          "geometry": {
+            "type": "POLYGON",
+            "exterior": [
+              { "x": 0, "y": 0 },
+              { "x": 0, "y": 50 },
+              { "x": 50, "y": 50 },
+              { "x": 50, "y": 0 }
+            ]
+          },
+          "objectClass": "slab",
+          "confidence": 0.75
+        }
+      ],
+      "symbols": [
+        {
+          "geometry": { "type": "POINT", "point": { "x": 12, "y": 34 } },
+          "objectClass": "door",
+          "confidence": 0.9
+        }
+      ]
+    }
+  },
+  "MAP": {
+    "output": {
+      "candidates": [
+        {
+          "geometry": {
+            "type": "POLYGON",
+            "exterior": [
+              { "x": 0, "y": 0 },
+              { "x": 0, "y": 50 },
+              { "x": 50, "y": 50 },
+              { "x": 50, "y": 0 }
+            ]
+          },
+          "objectClass": "slab",
+          "measurementType": "AREA",
+          "unit": "SF",
+          "conditionKey": "concrete:slab-on-grade",
+          "detectionConfidence": 0.75
+        }
+      ]
+    }
+  },
+  "QUANTIFY": {
+    "output": {
+      "candidates": [
+        {
+          "geometry": {
+            "type": "POLYGON",
+            "exterior": [
+              { "x": 0, "y": 0 },
+              { "x": 0, "y": 50 },
+              { "x": 50, "y": 50 },
+              { "x": 50, "y": 0 }
+            ]
+          },
+          "objectClass": "slab",
+          "measurementType": "AREA",
+          "unit": "SF",
+          "conditionKey": "concrete:slab-on-grade",
+          "detectionConfidence": 0.75,
+          "rawValue": 2500
+        }
+      ]
+    }
+  },
+  "CONFIDENCE": {
+    "output": {
+      "candidates": [
+        {
+          "geometry": {
+            "type": "POLYGON",
+            "exterior": [
+              { "x": 0, "y": 0 },
+              { "x": 0, "y": 50 },
+              { "x": 50, "y": 50 },
+              { "x": 50, "y": 0 }
+            ]
+          },
+          "objectClass": "slab",
+          "measurementType": "AREA",
+          "unit": "SF",
+          "conditionKey": "concrete:slab-on-grade",
+          "detectionConfidence": 0.75,
+          "rawValue": 2500,
+          "aiConfidence": 0.81
+        }
+      ]
+    }
+  }
+}

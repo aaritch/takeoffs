@@ -14,12 +14,15 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "gen:schemas": "tsx scripts/gen-stage-schemas.ts"
   },
   "dependencies": {
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "vitest": "^2.1.9"
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.9",
+    "zod-to-json-schema": "^3.24.1"
   }
 }

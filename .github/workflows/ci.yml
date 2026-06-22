@@ -101,3 +101,24 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  # Cross-plane contract parity (P2-01): the Python inference plane validates the SAME shared
+  # fixtures against the SAME JSON Schema the TypeScript Zod tests use, so the stage seam can't
+  # diverge between planes. (The TS side's drift test — in `verify` → Test — keeps the committed
+  # schema artifact in sync with the Zod source.)
+  python-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ai-inference (contract mirror)
+        working-directory: apps/ai-inference
+        run: python -m pip install -e ".[dev]"
+
+      - name: Stage-contract parity tests
+        working-directory: apps/ai-inference
+        run: python -m pytest -q

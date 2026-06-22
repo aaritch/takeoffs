@@ -6,4 +6,5 @@ export * from './events';
 export * from './jobs';
 export * from './measurements';
 export * from './observability';
+export * from './stages';
 export * from './tiles';
