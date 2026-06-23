@@ -14,8 +14,12 @@ Python and TypeScript planes enforce the _same_ stage seam with no second copy t
 `tests/` validate the shared fixtures (`packages/contracts/stage-fixtures.json`) identically to the
 TypeScript side.
 
-The pipeline/stages/models/serving packages land in later Phase-2 tasks (P2-02+), once the GPU
-compute home is chosen.
+`app/stages` holds the **deterministic** pipeline stages (P2-08): `vectorize` (dedupe/cleanup),
+`map_detections` (class → measurement type + unit + condition key), `quantify` (scale → real-world
+`rawValue`, mirroring `@takeoff/geometry` exactly), and `assemble_confidence`. These are pure
+functions over the P2-01 contract shapes — no GPU — and each output validates against the same
+schema. The probabilistic stages (classify/ocr/scale/lines/regions/symbols) plus models/serving land
+once the GPU compute home is chosen.
 
 ## Develop
 
