@@ -1,6 +1,6 @@
-import { and, count, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
+import { and, count, eq, gte, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import type { OrgScopedTx } from '../../data/org-scope';
-import { measurements } from '../../data/schema';
+import { measurements, sheets } from '../../data/schema';
 
 export type Measurement = typeof measurements.$inferSelect;
 
@@ -125,5 +125,65 @@ export const measurementsRepo = {
         ),
       );
     return { sum: Number(row?.sum ?? 0), count: Number(row?.cnt ?? 0) };
+  },
+
+  /**
+   * Scale-gated aggregate for a FINAL report (P2-05 GATE): like {@link aggregateForCondition}, but
+   * counts only measurements on a CONFIRMED-scale sheet (or with no sheet, which has no scale to
+   * confirm). A sheet whose scale is UNSET/AUTO is provisional and excluded until a human confirms
+   * it — protecting every bid built from a report.
+   */
+  async aggregateForConditionConfirmedScale(
+    tx: OrgScopedTx,
+    conditionId: string,
+  ): Promise<{ sum: number; count: number }> {
+    const [row] = await tx
+      .select({
+        sum: sql<string>`coalesce(sum(${measurements.raw_value}), 0)`,
+        cnt: count(),
+      })
+      .from(measurements)
+      .leftJoin(sheets, eq(measurements.sheet_id, sheets.id))
+      .where(
+        and(
+          eq(measurements.condition_id, conditionId),
+          isNull(measurements.deleted_at),
+          inArray(measurements.review_status, [...COUNTED_STATES]),
+          or(isNull(measurements.sheet_id), eq(sheets.scale_status, 'CONFIRMED')),
+        ),
+      );
+    return { sum: Number(row?.sum ?? 0), count: Number(row?.cnt ?? 0) };
+  },
+
+  /**
+   * The distinct unconfirmed-scale sheets that hold counted measurements for these conditions —
+   * i.e. the sheets a final report excludes as provisional (P2-05). Surfaced so the exclusion is
+   * never silent.
+   */
+  async excludedScaleSheets(
+    tx: OrgScopedTx,
+    conditionIds: string[],
+  ): Promise<{ sheetId: string; label: string }[]> {
+    if (conditionIds.length === 0) return [];
+    const rows = await tx
+      .selectDistinct({
+        sheetId: sheets.id,
+        sheetNumber: sheets.sheet_number,
+        indexInSet: sheets.index_in_set,
+      })
+      .from(measurements)
+      .innerJoin(sheets, eq(measurements.sheet_id, sheets.id))
+      .where(
+        and(
+          inArray(measurements.condition_id, conditionIds),
+          isNull(measurements.deleted_at),
+          inArray(measurements.review_status, [...COUNTED_STATES]),
+          ne(sheets.scale_status, 'CONFIRMED'),
+        ),
+      );
+    return rows.map((r) => ({
+      sheetId: r.sheetId,
+      label: r.sheetNumber ?? `Sheet ${r.indexInSet + 1}`,
+    }));
   },
 };

@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { eq, sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { uuidv7 } from 'uuidv7';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { EXPORT_QUEUE, type MeasurementGeometry } from '@takeoff/contracts';
 import { createDb, type DbHandle } from '../../data/client';
@@ -10,9 +11,11 @@ import { enqueue } from '../../platform/queue';
 import { S3Storage } from '../../storage/s3';
 import { accountsService } from '../accounts';
 import { conditionsService } from '../conditions';
+import { sheetsRepo } from '../ingestion';
 import { getRollup } from '../measurements/rollup';
 import { measurementsService } from '../measurements';
 import { projectsRepo } from '../projects/repository';
+import { planSetsRepo, sourceFilesRepo } from '../source-files/repository';
 import { takeoffsRepo } from '../takeoffs/repository';
 import { seedGlobalTradeData } from '../trades/seed';
 import {
@@ -53,7 +56,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await admin.db.execute(
-    sql`TRUNCATE reports, measurements, quantity_rollups, conditions, takeoffs, projects, condition_templates, trade_categories, memberships, service_profiles, organizations, users RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE reports, measurements, quantity_rollups, conditions, takeoffs, sheets, source_files, plan_sets, projects, condition_templates, trade_categories, memberships, service_profiles, organizations, users RESTART IDENTITY CASCADE`,
   );
   await seedGlobalTradeData(admin.db);
 });
@@ -233,5 +236,103 @@ describe('report generation (P1-13)', () => {
     // header + 25 condition rows + TOTAL.
     expect(csv.split('\n').length).toBe(1 + 25 + 1);
     await storage.deleteObject(stored!.storage_key!);
+  });
+
+  it('P2-05 GATE: a final report excludes unconfirmed-scale sheets; confirming promotes them', async () => {
+    const orgId = (
+      await accountsService.createOrganizationWithOwner(admin.db, {
+        name: 'gate2',
+        slug: 'gate2',
+        owner: { email: 'gate2@t.test' },
+      })
+    ).organization.id;
+
+    const ids = await withOrgScope(app.db, orgId, async (tx) => {
+      const project = await projectsRepo.insert(tx, { org_id: orgId, name: 'Bid' });
+      const planSet = await planSetsRepo.insert(tx, {
+        org_id: orgId,
+        project_id: project.id,
+        version_number: 1,
+      });
+      const sourceFileId = uuidv7();
+      await sourceFilesRepo.insert(tx, {
+        id: sourceFileId,
+        org_id: orgId,
+        plan_set_id: planSet.id,
+        original_filename: 'A.pdf',
+        mime_type: 'application/pdf',
+        byte_size: 1,
+        checksum_sha256: 'a'.repeat(64),
+        storage_key: `org/${orgId}/x`,
+        upload_status: 'UPLOADED',
+      });
+      const [confirmed, unconfirmed] = await sheetsRepo.insertMany(tx, [
+        {
+          org_id: orgId,
+          plan_set_id: planSet.id,
+          source_file_id: sourceFileId,
+          index_in_set: 0,
+          unit_per_pixel: UPP,
+          scale_status: 'CONFIRMED',
+          scale_units: 'IMPERIAL',
+        },
+        {
+          org_id: orgId,
+          plan_set_id: planSet.id,
+          source_file_id: sourceFileId,
+          index_in_set: 1,
+          unit_per_pixel: UPP,
+          scale_status: 'AUTO',
+          scale_units: 'IMPERIAL',
+        },
+      ]);
+      const takeoff = await takeoffsRepo.insert(tx, {
+        org_id: orgId,
+        project_id: project.id,
+        plan_set_id: planSet.id,
+      });
+      const cat = await tx.query.tradeCategories.findFirst({
+        where: eq(tradeCategories.division_code, '03'),
+      });
+      const condition = await conditionsService.create(tx, {
+        takeoff_id: takeoff.id,
+        trade_category_id: cat!.id,
+        name: 'Slab',
+        measurement_type: 'AREA',
+        unit: 'SF',
+        unit_cost_minor: 350,
+      });
+      // 2500 sq ft on each sheet — one confirmed, one provisional.
+      await measurementsService.create(tx, {
+        condition_id: condition.id,
+        sheet_id: confirmed!.id,
+        geometry: square(100),
+        unit_per_pixel: UPP,
+      });
+      await measurementsService.create(tx, {
+        condition_id: condition.id,
+        sheet_id: unconfirmed!.id,
+        geometry: square(100),
+        unit_per_pixel: UPP,
+      });
+      return { takeoffId: takeoff.id, unconfirmedSheetId: unconfirmed!.id };
+    });
+
+    // Only the CONFIRMED sheet's 2500 sq ft counts; the unconfirmed sheet is excluded + surfaced.
+    let data = await withOrgScope(app.db, orgId, (tx) => buildReportData(tx, ids.takeoffId));
+    expect(data.rows[0]!.baseQuantity).toBe(2500);
+    expect(data.rows[0]!.measurementCount).toBe(1);
+    expect(data.excludedSheets).toHaveLength(1);
+    expect(renderReport('SUMMARY', data)).toContain('PROVISIONAL');
+
+    // Confirming the second sheet's scale promotes its quantity into the final report.
+    await withOrgScope(app.db, orgId, (tx) =>
+      sheetsRepo.update(tx, ids.unconfirmedSheetId, { scale_status: 'CONFIRMED' }),
+    );
+    data = await withOrgScope(app.db, orgId, (tx) => buildReportData(tx, ids.takeoffId));
+    expect(data.rows[0]!.baseQuantity).toBe(5000);
+    expect(data.rows[0]!.measurementCount).toBe(2);
+    expect(data.excludedSheets).toHaveLength(0);
+    expect(renderReport('SUMMARY', data)).not.toContain('PROVISIONAL');
   });
 });
