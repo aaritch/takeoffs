@@ -6,6 +6,7 @@ import { getDb } from '../data/client';
 import { resolveAuthContext } from '../modules/accounts/auth-context';
 import { ConditionError } from '../modules/conditions/errors';
 import { MeasurementError } from '../modules/measurements/errors';
+import { OrderError } from '../modules/orders/errors';
 import { SourceFileError } from '../modules/source-files/errors';
 import { withRequestContext } from './observability';
 
@@ -70,6 +71,10 @@ function mapError(err: unknown): { status: number; body: ErrorEnvelope } {
   }
   if (err instanceof MeasurementError || err instanceof ConditionError) {
     return { status: err.code === 'NOT_FOUND' ? 404 : 400, body: envelope(err.code, err.message) };
+  }
+  if (err instanceof OrderError) {
+    const status = err.code === 'NOT_FOUND' ? 404 : err.code === 'ILLEGAL_TRANSITION' ? 409 : 400;
+    return { status, body: envelope(err.code, err.message) };
   }
   throw err;
 }
