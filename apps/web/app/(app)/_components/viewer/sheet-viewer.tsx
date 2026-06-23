@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Stack } from '@takeoff/ui';
+import { Badge, Button, Input, Stack } from '@takeoff/ui';
 import type {
   ConditionView,
   MeasurementGeometry,
@@ -44,6 +44,11 @@ function toOverlay(m: MeasurementView): OverlayMeasurement {
   };
 }
 
+/** The drawing tool / measurement type a geometry corresponds to. */
+function geomToType(t: MeasurementGeometry['type']): 'LINEAR' | 'AREA' | 'COUNT' {
+  return t === 'POLYGON' ? 'AREA' : t === 'POLYLINE' ? 'LINEAR' : 'COUNT';
+}
+
 async function getJson<T>(url: string): Promise<T> {
   const r = await fetch(url, { headers: { accept: 'application/json' } });
   if (!r.ok) throw new Error(`status ${r.status}`);
@@ -76,6 +81,8 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [history, setHistory] = useState(emptyHistory);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [bulkPercent, setBulkPercent] = useState(80);
 
   // Mirror the live set into a ref so optimistic reverts can snapshot it synchronously.
   const measurementsRef = useRef(measurements);
@@ -175,6 +182,24 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
         return;
       }
 
+      // Redraw mode (edit-geometry): the new outline replaces the selected candidate's geometry via
+      // PATCH, so the server recomputes its quantity and writes EDIT_GEOMETRY feedback (P2-10).
+      if (editingId) {
+        void fetch(`/api/v1/measurements/${editingId}/geometry`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ geometry }),
+        })
+          .then((r) => (r.ok ? loadMeasurements() : Promise.reject(new Error(`edit ${r.status}`))))
+          .then(() => {
+            setEditingId(null);
+            setSelectedIds([]);
+            setNotice('Geometry updated.');
+          })
+          .catch(() => setNotice('Could not update geometry.'));
+        return;
+      }
+
       if (!activeConditionId) {
         setNotice('Pick or create a condition before drawing.');
         return;
@@ -199,7 +224,7 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
         })
         .catch(() => setNotice('Could not save measurement.'));
     },
-    [calibrating, activeConditionId, sheetId, loadSheet],
+    [calibrating, editingId, activeConditionId, sheetId, loadSheet, loadMeasurements],
   );
 
   const handleDelete = useCallback(async () => {
@@ -263,6 +288,7 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
 
   const handleCalibrate = useCallback(() => {
     setCalibrating(true);
+    setEditingId(null);
     setTool('SELECT');
     setNotice('Draw a line of known length, then double-click to finish.');
   }, []);
@@ -289,6 +315,52 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
     [loadMeasurements],
   );
 
+  const handleReclassify = useCallback(
+    (measurementId: string, conditionId: string) => {
+      void fetch(`/api/v1/measurements/${measurementId}/reclassify`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ conditionId }),
+      })
+        .then((r) =>
+          r.ok ? loadMeasurements() : Promise.reject(new Error(`reclassify ${r.status}`)),
+        )
+        .then(() => {
+          setSelectedIds([]);
+          setNotice('Candidate reclassified.');
+        })
+        .catch(() => setNotice('Could not reclassify the candidate.'));
+    },
+    [loadMeasurements],
+  );
+
+  const handleBulkAccept = useCallback(
+    (conditionId: string, minConfidence: number) => {
+      void fetch(`/api/v1/conditions/${conditionId}/candidates/accept`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ minConfidence }),
+      })
+        .then((r) =>
+          r.ok
+            ? (r.json() as Promise<{ accepted: number }>)
+            : Promise.reject(new Error(`bulk ${r.status}`)),
+        )
+        .then((d) => loadMeasurements().then(() => d))
+        .then((d) => setNotice(`Accepted ${d.accepted} candidate${d.accepted === 1 ? '' : 's'}.`))
+        .catch(() => setNotice('Could not bulk-accept candidates.'));
+    },
+    [loadMeasurements],
+  );
+
+  /** Enter redraw mode: the next drawing replaces the selected candidate's geometry. */
+  const handleRedraw = useCallback((measurementId: string) => {
+    setCalibrating(false);
+    setTool('SELECT');
+    setEditingId(measurementId);
+    setNotice('Re-trace the outline, then double-click to finish.');
+  }, []);
+
   if (error)
     return (
       <p role="alert" className="error">
@@ -300,8 +372,25 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
     return <p className="muted">This sheet has no tiles yet — it may still be processing.</p>;
   }
 
-  // Calibration borrows the LINEAR tool; otherwise SELECT means no active drawing tool.
-  const drawTool = calibrating ? 'LINEAR' : tool === 'SELECT' ? null : tool;
+  // Calibration borrows the LINEAR tool; redraw borrows the selected candidate's tool; otherwise
+  // SELECT means no active drawing tool.
+  const editingCandidate = editingId ? measurements.find((m) => m.id === editingId) : undefined;
+  const editTool = editingCandidate ? geomToType(editingCandidate.geometry.type) : null;
+  const drawTool = calibrating ? 'LINEAR' : editingId ? editTool : tool === 'SELECT' ? null : tool;
+
+  // Reclassify targets: compatible conditions (same measurement type), excluding the current one.
+  const candidateType = selectedCandidate ? geomToType(selectedCandidate.geometry.type) : null;
+  const reclassifyTargets = selectedCandidate
+    ? conditions
+        .filter(
+          (c) => c.measurementType === candidateType && c.id !== selectedCandidate.conditionId,
+        )
+        .map((c) => ({ id: c.id, name: c.name }))
+    : [];
+
+  const activeCandidateCount = activeConditionId
+    ? measurements.filter((m) => m.isCandidate && m.conditionId === activeConditionId).length
+    : 0;
 
   return (
     <Stack gap="md">
@@ -317,6 +406,7 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
         tool={tool}
         onToolChange={(t) => {
           setCalibrating(false);
+          setEditingId(null);
           setTool(t);
         }}
         conditions={conditions}
@@ -339,7 +429,31 @@ export function SheetViewer({ sheetId }: { sheetId: string }) {
           confidence={selectedCandidate.confidence}
           onAccept={() => handleReview(selectedCandidate.id, 'accept')}
           onReject={() => handleReview(selectedCandidate.id, 'reject')}
+          canRedraw={candidateType === 'LINEAR' || candidateType === 'AREA'}
+          redrawing={editingId === selectedCandidate.id}
+          onRedraw={() => handleRedraw(selectedCandidate.id)}
+          reclassifyTargets={reclassifyTargets}
+          onReclassify={(conditionId) => handleReclassify(selectedCandidate.id, conditionId)}
         />
+      ) : null}
+      {activeConditionId && activeCandidateCount > 0 ? (
+        <Stack direction="row" gap="sm">
+          <span className="muted">{activeCandidateCount} AI candidate(s) in this condition</span>
+          <span className="muted">· accept all ≥</span>
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            value={bulkPercent}
+            onChange={(e) => setBulkPercent(Number(e.target.value))}
+            aria-label="Bulk-accept confidence threshold"
+            style={{ width: '4.5rem' }}
+          />
+          <span className="muted">%</span>
+          <Button size="sm" onClick={() => handleBulkAccept(activeConditionId, bulkPercent / 100)}>
+            Accept all
+          </Button>
+        </Stack>
       ) : null}
       {notice ? <span className="muted">{notice}</span> : null}
 
