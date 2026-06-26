@@ -13,3 +13,4 @@ export * from './reports';
 export * from './model-runs';
 export * from './review';
 export * from './orders';
+export * from './pricing';

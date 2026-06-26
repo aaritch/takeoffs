@@ -14,3 +14,4 @@ export * from './reports';
 export * from './model-runs';
 export * from './detection-feedback';
 export * from './orders';
+export * from './pricing-rules';

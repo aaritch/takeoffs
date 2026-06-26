@@ -6,7 +6,9 @@ import type {
   ServiceTier,
 } from '@takeoff/contracts';
 import { currentOrgId, type OrgScopedTx } from '../../data/org-scope';
-import { NotFound } from './errors';
+import { sheetsRepo } from '../ingestion';
+import { computeQuote, pricingRulesRepo } from '../pricing';
+import { NotFound, ValidationFailed } from './errors';
 import { ordersRepo, type Order, type OrderEvent } from './repository';
 import { assertTransition } from './state-machine';
 
@@ -121,6 +123,34 @@ export const ordersService = {
       payload: opts.note ? { note: opts.note } : {},
     });
     return updated;
+  },
+
+  /**
+   * Quote a DRAFT order from the pricing rules (P3-02): compute price + turnaround from its tier,
+   * priority, requested-trade count, and the plan set's sheet count, then move DRAFT → QUOTED with
+   * those fields stamped. The state machine enforces that only a DRAFT order can be quoted.
+   */
+  async quote(tx: OrgScopedTx, orderId: string, actor: Actor): Promise<Order> {
+    const order = await ordersRepo.getById(tx, orderId);
+    if (!order) throw NotFound();
+    const rule = await pricingRulesRepo.get(tx, order.service_tier, order.priority);
+    if (!rule) {
+      throw ValidationFailed(
+        `No pricing rule for ${order.service_tier}/${order.priority}`,
+        'serviceTier',
+      );
+    }
+    const sheetCount = order.plan_set_id
+      ? (await sheetsRepo.listByPlanSet(tx, order.plan_set_id)).length
+      : 0;
+    const quote = computeQuote(rule, { tradeCount: order.requested_trades.length, sheetCount });
+    return ordersService.transition(tx, orderId, 'QUOTED', actor, {
+      set: {
+        price_quote_minor: quote.priceQuoteMinor,
+        promised_turnaround_hours: quote.promisedTurnaroundHours,
+      },
+      note: `Quoted ${quote.priceQuoteMinor} (minor) · ${quote.promisedTurnaroundHours}h`,
+    });
   },
 
   getById(tx: OrgScopedTx, id: string): Promise<Order | undefined> {

@@ -1,5 +1,6 @@
 import { createDb } from './client';
 import { seedGlobalTradeData } from '../modules/trades/seed';
+import { seedGlobalPricingRules } from '../modules/pricing/seed';
 
 /**
  * Load global seed data. Run with `pnpm --filter @takeoff/web db:seed`.
@@ -10,7 +11,8 @@ async function main(): Promise<void> {
   const { db, pool } = createDb(url);
   try {
     await seedGlobalTradeData(db);
-    console.log('global trade/condition seed loaded');
+    await seedGlobalPricingRules(db);
+    console.log('global trade/condition + pricing seed loaded');
   } finally {
     await pool.end();
   }
