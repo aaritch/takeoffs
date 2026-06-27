@@ -93,6 +93,9 @@ export const serviceProfiles = pgTable('service_profiles', {
     .default(sql`'{}'::text[]`),
   payout_account_ref: text('payout_account_ref'),
   active: boolean('active').notNull().default(true),
+  /** Live count of concurrently-active orders assigned to this estimator (recomputed as orders move). */
   current_capacity: integer('current_capacity').notNull().default(0),
+  /** The most concurrent active orders this estimator may hold; assignment requires being under it. */
+  max_concurrent_orders: integer('max_concurrent_orders').notNull().default(5),
   ...timestamps,
 });

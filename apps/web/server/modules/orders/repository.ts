@@ -1,9 +1,18 @@
-import { and, asc, desc, eq, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
+import type { OrderStatus } from '@takeoff/contracts';
 import type { OrgScopedTx } from '../../data/org-scope';
 import { orderEvents, orders } from '../../data/schema';
 
 export type Order = typeof orders.$inferSelect;
 export type OrderEvent = typeof orderEvents.$inferSelect;
+
+/** Statuses where an order still occupies an estimator's concurrent-order capacity (P3-04). */
+export const ACTIVE_ASSIGNMENT_STATUSES: readonly OrderStatus[] = [
+  'ASSIGNED',
+  'IN_PROGRESS',
+  'IN_QA',
+  'REVISIONS',
+];
 
 /** Orders + append-only OrderEvent data access, org-scoped via RLS (run inside withOrgScope). */
 export const ordersRepo = {
@@ -49,5 +58,23 @@ export const ordersRepo = {
       where: eq(orderEvents.order_id, orderId),
       orderBy: [asc(orderEvents.occurred_at)],
     });
+  },
+
+  /**
+   * How many active orders an estimator currently holds (across all orgs) — their live capacity
+   * load (P3-04). Run on the platform/admin connection, which sees orders cross-org.
+   */
+  async countActiveByEstimator(tx: OrgScopedTx, estimatorId: string): Promise<number> {
+    const [row] = await tx
+      .select({ cnt: count() })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.assigned_estimator_id, estimatorId),
+          inArray(orders.status, [...ACTIVE_ASSIGNMENT_STATUSES]),
+          isNull(orders.deleted_at),
+        ),
+      );
+    return Number(row?.cnt ?? 0);
   },
 };

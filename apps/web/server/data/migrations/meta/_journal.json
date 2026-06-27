@@ -169,6 +169,13 @@
       "when": 1782463419772,
       "tag": "0023_org_rls_retainers",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1782563440204,
+      "tag": "0024_quiet_cloak",
+      "breakpoints": true
     }
   ]
 }

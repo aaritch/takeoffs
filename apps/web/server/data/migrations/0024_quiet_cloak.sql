@@ -1,0 +1,1 @@
+ALTER TABLE "service_profiles" ADD COLUMN "max_concurrent_orders" integer DEFAULT 5 NOT NULL;

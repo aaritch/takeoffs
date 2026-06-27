@@ -77,6 +77,7 @@ function mapError(err: unknown): { status: number; body: ErrorEnvelope } {
       NOT_FOUND: 404,
       ILLEGAL_TRANSITION: 409,
       PAYMENT_REQUIRED: 402,
+      FORBIDDEN: 403,
     };
     return { status: byCode[err.code] ?? 400, body: envelope(err.code, err.message) };
   }
