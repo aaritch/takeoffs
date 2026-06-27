@@ -7,8 +7,9 @@ import type {
 } from '@takeoff/contracts';
 import { currentOrgId, type OrgScopedTx } from '../../data/org-scope';
 import { sheetsRepo } from '../ingestion';
+import { stubAuthorizer, retainersRepo, type PaymentAuthorizer } from '../payments';
 import { computeQuote, pricingRulesRepo } from '../pricing';
-import { NotFound, ValidationFailed } from './errors';
+import { NotFound, PaymentRequired, ValidationFailed } from './errors';
 import { ordersRepo, type Order, type OrderEvent } from './repository';
 import { assertTransition } from './state-machine';
 
@@ -101,7 +102,7 @@ export const ordersService = {
     orderId: string,
     toStatus: OrderStatus,
     actor: Actor,
-    opts: { note?: string; set?: Partial<Order> } = {},
+    opts: { note?: string; set?: Partial<Order>; payload?: Record<string, unknown> } = {},
   ): Promise<Order> {
     const order = await ordersRepo.getById(tx, orderId);
     if (!order) throw NotFound();
@@ -120,7 +121,7 @@ export const ordersService = {
       to_status: toStatus,
       actor_id: actor.userId,
       actor_role: actor.role,
-      payload: opts.note ? { note: opts.note } : {},
+      payload: { ...(opts.payload ?? {}), ...(opts.note ? { note: opts.note } : {}) },
     });
     return updated;
   },
@@ -150,6 +151,47 @@ export const ordersService = {
         promised_turnaround_hours: quote.promisedTurnaroundHours,
       },
       note: `Quoted ${quote.priceQuoteMinor} (minor) · ${quote.promisedTurnaroundHours}h`,
+    });
+  },
+
+  /**
+   * Place a QUOTED order (P3-03): SECURE payment first (charge authorization, or a retainer draw for
+   * RETAINER_DRAW orders), then move QUOTED → PLACED. Payment + the status change happen in one
+   * transaction, so a declined charge or insufficient retainer rolls everything back — the order
+   * stays QUOTED and never enters the queue (the caveat: no unpaid work). `placed_at` is stamped by
+   * the transition, starting the SLA clock.
+   */
+  async place(
+    tx: OrgScopedTx,
+    orderId: string,
+    actor: Actor,
+    deps: { authorizer: PaymentAuthorizer } = { authorizer: stubAuthorizer },
+  ): Promise<Order> {
+    const order = await ordersRepo.getById(tx, orderId);
+    if (!order) throw NotFound();
+    if (order.price_quote_minor == null) {
+      throw ValidationFailed('Order must be quoted before it can be placed', 'status');
+    }
+    const amount = order.price_quote_minor;
+
+    let payload: Record<string, unknown>;
+    if (order.service_tier === 'RETAINER_DRAW') {
+      const newBalance = await retainersRepo.draw(tx, order.org_id, amount);
+      if (newBalance === null) throw PaymentRequired('Insufficient retainer balance');
+      payload = { paymentMethod: 'RETAINER', retainerBalanceMinor: newBalance };
+    } else {
+      const auth = await deps.authorizer.authorizeCharge({
+        orgId: order.org_id,
+        orderId,
+        amountMinor: amount,
+      });
+      if (!auth.ok) throw PaymentRequired(auth.reason ?? 'Payment authorization failed');
+      payload = { paymentMethod: 'CHARGE', paymentReference: auth.reference ?? null };
+    }
+
+    return ordersService.transition(tx, orderId, 'PLACED', actor, {
+      note: 'Payment secured',
+      payload,
     });
   },
 

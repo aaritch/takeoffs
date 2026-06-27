@@ -1,6 +1,10 @@
 import type { OrderStatus } from '@takeoff/contracts';
 
-export type OrderErrorCode = 'NOT_FOUND' | 'ILLEGAL_TRANSITION' | 'VALIDATION_FAILED';
+export type OrderErrorCode =
+  | 'NOT_FOUND'
+  | 'ILLEGAL_TRANSITION'
+  | 'VALIDATION_FAILED'
+  | 'PAYMENT_REQUIRED';
 
 /** Domain error for the orders module; `code` maps onto the API ErrorEnvelope (P3-01). */
 export class OrderError extends Error {
@@ -19,3 +23,4 @@ export const ValidationFailed = (message: string, field?: string) =>
   new OrderError('VALIDATION_FAILED', message, field);
 export const IllegalTransition = (from: OrderStatus, to: OrderStatus) =>
   new OrderError('ILLEGAL_TRANSITION', `An order cannot move from ${from} to ${to}.`);
+export const PaymentRequired = (message: string) => new OrderError('PAYMENT_REQUIRED', message);

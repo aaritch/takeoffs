@@ -73,8 +73,12 @@ function mapError(err: unknown): { status: number; body: ErrorEnvelope } {
     return { status: err.code === 'NOT_FOUND' ? 404 : 400, body: envelope(err.code, err.message) };
   }
   if (err instanceof OrderError) {
-    const status = err.code === 'NOT_FOUND' ? 404 : err.code === 'ILLEGAL_TRANSITION' ? 409 : 400;
-    return { status, body: envelope(err.code, err.message) };
+    const byCode: Record<string, number> = {
+      NOT_FOUND: 404,
+      ILLEGAL_TRANSITION: 409,
+      PAYMENT_REQUIRED: 402,
+    };
+    return { status: byCode[err.code] ?? 400, body: envelope(err.code, err.message) };
   }
   throw err;
 }

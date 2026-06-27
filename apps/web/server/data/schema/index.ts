@@ -15,3 +15,4 @@ export * from './model-runs';
 export * from './detection-feedback';
 export * from './orders';
 export * from './pricing-rules';
+export * from './retainers';
