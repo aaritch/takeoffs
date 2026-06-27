@@ -36,9 +36,15 @@ export const OrderView = z.object({
   deliveredTakeoffId: z.string().uuid().nullable(),
   deliveredAt: z.string().datetime().nullable(),
   placedAt: z.string().datetime().nullable(),
+  /** When the dispute window closes and the order auto-accepts (delivered_at + window); null until delivered. */
+  disputeDeadline: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
 });
 export type OrderView = z.infer<typeof OrderView>;
+
+/** POST /v1/orders/{id}/dispute — the customer opens a dispute on a delivered order. */
+export const DisputeOrderRequest = z.object({ reason: z.string().min(1).max(4000) });
+export type DisputeOrderRequest = z.infer<typeof DisputeOrderRequest>;
 
 /** An immutable audit entry for an order lifecycle transition. */
 export const OrderEventView = z.object({

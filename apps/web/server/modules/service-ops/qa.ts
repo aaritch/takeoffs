@@ -6,6 +6,7 @@ import { NotFound, ValidationFailed } from '../orders/errors';
 import { ordersRepo, type Order } from '../orders/repository';
 import { ordersService, type Actor } from '../orders';
 import { assignmentService } from './assignment';
+import { loggingOrderNotifier, type OrderNotifier } from './notifier';
 
 /**
  * QA workflow (P3-06 · GATE). When the estimator completes work the order moves to IN_QA, and a
@@ -88,6 +89,7 @@ export const qaService = {
     qaProfileId: string,
     actor: Actor,
     attest: QaAttestation,
+    deps: { notifier: OrderNotifier } = { notifier: loggingOrderNotifier },
   ): Promise<Order> {
     return db.transaction(async (tx) => {
       const order = await ordersRepo.getById(tx, orderId);
@@ -99,10 +101,13 @@ export const qaService = {
       if (!attest.quantitiesSpotChecked || !attest.reportRenders) {
         throw ValidationFailed('QA attestations incomplete', 'checklist');
       }
-      return ordersService.transition(tx, orderId, 'DELIVERED', actor, {
+      const delivered = await ordersService.transition(tx, orderId, 'DELIVERED', actor, {
         set: { qa_reviewer_id: qaProfileId },
         payload: { checklist: { ...checklist, ...attest } },
       });
+      // Delivery notifies the customer (the takeoff is now theirs to export).
+      await deps.notifier.delivered({ orderId, orgId: order.org_id });
+      return delivered;
     });
   },
 

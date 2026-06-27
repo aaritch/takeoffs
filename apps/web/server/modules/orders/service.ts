@@ -18,6 +18,18 @@ export interface Actor {
   role: string;
 }
 
+/**
+ * PROVISIONAL managed-service dispute / auto-accept window (P3-07). After delivery the customer has
+ * this long to accept or dispute; absent action the order auto-accepts. The owner sets the real
+ * number (STATE §7 TBD) — this is the mechanism's default.
+ */
+export const DISPUTE_WINDOW_HOURS = 72;
+
+function disputeDeadline(o: Order): string | null {
+  if (!o.delivered_at) return null;
+  return new Date(o.delivered_at.getTime() + DISPUTE_WINDOW_HOURS * 3_600_000).toISOString();
+}
+
 export interface CreateOrderInput {
   projectId: string;
   planSetId?: string;
@@ -45,6 +57,7 @@ export function orderToView(o: Order): OrderView {
     deliveredTakeoffId: o.delivered_takeoff_id,
     deliveredAt: o.delivered_at?.toISOString() ?? null,
     placedAt: o.placed_at?.toISOString() ?? null,
+    disputeDeadline: disputeDeadline(o),
     createdAt: o.created_at.toISOString(),
   };
 }

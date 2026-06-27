@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, lte } from 'drizzle-orm';
 import type { OrderStatus } from '@takeoff/contracts';
 import type { OrgScopedTx } from '../../data/org-scope';
 import { orderEvents, orders } from '../../data/schema';
@@ -57,6 +57,20 @@ export const ordersRepo = {
     return tx.query.orderEvents.findMany({
       where: eq(orderEvents.order_id, orderId),
       orderBy: [asc(orderEvents.occurred_at)],
+    });
+  },
+
+  /**
+   * DELIVERED orders whose dispute window has lapsed (delivered_at ≤ cutoff) — the auto-accept
+   * sweep set (P3-07). Cross-org; run on the platform/admin connection.
+   */
+  async listDeliveredBefore(tx: OrgScopedTx, cutoff: Date): Promise<Order[]> {
+    return tx.query.orders.findMany({
+      where: and(
+        eq(orders.status, 'DELIVERED'),
+        lte(orders.delivered_at, cutoff),
+        isNull(orders.deleted_at),
+      ),
     });
   },
 

@@ -207,11 +207,20 @@ describe('QA workflow (P3-06 gate)', () => {
     expect(returned.qa_reviewer_id).toBe(qaProfileId);
   });
 
-  it('an approved order advances to DELIVERED with the checklist recorded', async () => {
+  it('an approved order advances to DELIVERED with the checklist recorded + customer notified', async () => {
     const orderId = await fulfilledOrder('approve');
-    const delivered = await qaService.approve(admin.db, orderId, qaProfileId, qaActor, PASS);
-    expect(delivered.status).toBe('DELIVERED');
-    expect(delivered.qa_reviewer_id).toBe(qaProfileId);
+    const delivered: string[] = [];
+    const notifier = {
+      delivered: (n: { orderId: string }) => void delivered.push(n.orderId),
+      accepted: () => {},
+      disputed: () => {},
+    };
+    const order = await qaService.approve(admin.db, orderId, qaProfileId, qaActor, PASS, {
+      notifier,
+    });
+    expect(order.status).toBe('DELIVERED');
+    expect(order.qa_reviewer_id).toBe(qaProfileId);
+    expect(delivered).toEqual([orderId]); // delivery notified the customer
 
     const events = await admin.db.transaction((tx) => ordersService.listEvents(tx, orderId));
     expect(events.at(-1)?.payload).toMatchObject({
