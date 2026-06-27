@@ -20,6 +20,8 @@ import { serviceProfilesRepo } from './repository';
 export interface AssignmentResult {
   assigned: boolean;
   estimatorId?: string;
+  /** The order after the attempt — ASSIGNED on success, still PLACED when no estimator is free. */
+  order: Order;
 }
 
 async function recomputeCapacity(tx: OrgScopedTx, profileId: string): Promise<void> {
@@ -78,9 +80,13 @@ export const assignmentService = {
         })),
       );
       const picked = pickEstimator(candidates, order.requested_trades);
-      if (!picked) return { assigned: false };
+      if (!picked) return { assigned: false, order };
       await assignTo(tx, order, picked.profileId, actor);
-      return { assigned: true, estimatorId: picked.profileId };
+      return {
+        assigned: true,
+        estimatorId: picked.profileId,
+        order: (await ordersRepo.getById(tx, orderId))!,
+      };
     });
   },
 

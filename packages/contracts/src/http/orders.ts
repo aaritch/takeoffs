@@ -54,6 +54,18 @@ export const OrderEventView = z.object({
 });
 export type OrderEventView = z.infer<typeof OrderEventView>;
 
+/** POST /v1/orders/{id}/reassign — platform admin assigns the order to a specific estimator. */
+export const ReassignOrderRequest = z.object({ estimatorId: z.string().uuid() });
+export type ReassignOrderRequest = z.infer<typeof ReassignOrderRequest>;
+
+/** Result of an assignment attempt: `assigned: false` (with the still-PLACED order) means it waits. */
+export const AssignmentResultResponse = z.object({
+  assigned: z.boolean(),
+  estimatorId: z.string().uuid().nullable(),
+  order: OrderView,
+});
+export type AssignmentResultResponse = z.infer<typeof AssignmentResultResponse>;
+
 export const OrderResponse = z.object({ order: OrderView });
 export type OrderResponse = z.infer<typeof OrderResponse>;
 export const OrdersListResponse = z.object({ orders: z.array(OrderView) });

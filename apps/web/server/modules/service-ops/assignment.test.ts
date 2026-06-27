@@ -96,7 +96,8 @@ describe('estimator assignment & capacity (P3-04)', () => {
     const orderId = await placedOrder(orgId, projectId, [trade]);
 
     const result = await assignmentService.autoAssign(admin.db, orderId, actor);
-    expect(result).toEqual({ assigned: true, estimatorId: est });
+    expect(result).toMatchObject({ assigned: true, estimatorId: est });
+    expect(result.order.status).toBe('ASSIGNED');
 
     const order = await getOrder(orderId);
     expect(order?.status).toBe('ASSIGNED');

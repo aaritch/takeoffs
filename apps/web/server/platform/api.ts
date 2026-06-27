@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { AuthContext } from '@takeoff/auth';
-import type { CustomerRole, ErrorEnvelope, FieldError } from '@takeoff/contracts';
+import type { CustomerRole, ErrorEnvelope, FieldError, ServiceRole } from '@takeoff/contracts';
 import { auth } from '@/auth';
 import { getDb } from '../data/client';
 import { resolveAuthContext } from '../modules/accounts/auth-context';
+import { repo as accountsRepo } from '../modules/accounts/repository';
+import { ApiError } from './http-error';
+import { resolvePlatformActor, type PlatformActor } from './platform-actor';
+
+export { ApiError } from './http-error';
+export { resolvePlatformActor } from './platform-actor';
+export type { PlatformActor } from './platform-actor';
 import { ConditionError } from '../modules/conditions/errors';
 import { MeasurementError } from '../modules/measurements/errors';
 import { OrderError } from '../modules/orders/errors';
@@ -15,18 +22,6 @@ import { withRequestContext } from './observability';
  * an authenticated user, resolves the org to scope to, and maps domain errors onto the standard
  * ErrorEnvelope. The actual data work happens in services via withOrgScope.
  */
-
-export class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-    message: string,
-    readonly details?: FieldError[],
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
 
 export interface ApiActor {
   userId: string;
@@ -98,6 +93,31 @@ export function apiHandler(
       const orgId = resolveOrg(request, authCtx);
       const role = authCtx.membershipsByOrg.get(orgId)!;
       return await fn({ userId, orgId, role });
+    } catch (err) {
+      const { status, body } = mapError(err);
+      return NextResponse.json(body, { status });
+    }
+  });
+}
+
+/**
+ * Wrap a platform (service-staff) handler: authenticate, resolve the actor's service profile, gate
+ * by role, and convert domain errors to envelopes. The handler runs cross-org on the admin
+ * connection; pass `roles` to restrict (e.g. `[PLATFORM_ADMIN]` for assignment).
+ */
+export function platformHandler(
+  request: Request,
+  fn: (actor: PlatformActor) => Promise<Response>,
+  opts: { roles?: ServiceRole[] } = {},
+): Promise<Response> {
+  return withRequestContext(request, async () => {
+    try {
+      const session = await auth();
+      const userId = session?.user?.id;
+      if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Sign in required.');
+      const profile = await accountsRepo.getServiceProfileByUser(getDb(), userId);
+      const actor = resolvePlatformActor(profile, opts.roles);
+      return await fn(actor);
     } catch (err) {
       const { status, body } = mapError(err);
       return NextResponse.json(body, { status });
