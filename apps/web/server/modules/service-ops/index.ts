@@ -3,6 +3,8 @@
 // build on this in later Phase-3 tasks.
 export { assignmentService } from './assignment';
 export type { AssignmentResult } from './assignment';
+export { fulfillmentService } from './fulfillment';
+export type { FulfillmentStart } from './fulfillment';
 export { serviceProfilesRepo } from './repository';
 export type { ServiceProfile } from './repository';
 export { isEligible, pickEstimator, specialtiesMatch } from './eligibility';

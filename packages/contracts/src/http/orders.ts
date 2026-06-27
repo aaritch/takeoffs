@@ -68,6 +68,13 @@ export type AssignmentResultResponse = z.infer<typeof AssignmentResultResponse>;
 
 export const OrderResponse = z.object({ order: OrderView });
 export type OrderResponse = z.infer<typeof OrderResponse>;
+
+/** POST /v1/orders/{id}/start — fulfillment begun: the order + its managed-service takeoff id. */
+export const FulfillmentStartResponse = z.object({
+  order: OrderView,
+  takeoffId: z.string().uuid(),
+});
+export type FulfillmentStartResponse = z.infer<typeof FulfillmentStartResponse>;
 export const OrdersListResponse = z.object({ orders: z.array(OrderView) });
 export type OrdersListResponse = z.infer<typeof OrdersListResponse>;
 export const OrderEventsListResponse = z.object({ events: z.array(OrderEventView) });
