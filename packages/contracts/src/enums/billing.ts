@@ -49,3 +49,12 @@ export type ReportStatus = z.infer<typeof ReportStatus>;
  */
 export const RetainerLedgerEntryType = z.enum(['TOP_UP', 'DRAW', 'REVERSAL']);
 export type RetainerLedgerEntryType = z.infer<typeof RetainerLedgerEntryType>;
+
+/**
+ * Integration export formats (spec §8, P4-08) — structured, VERSION-PINNED interchange exports so a
+ * takeoff's quantities flow into estimating/accounting tools. The version is part of the format id
+ * (target formats drift between versions — the caveat): `ESTIMATING_CSV_V1` is a documented columnar
+ * CSV for spreadsheet-based estimating; `ACCOUNTING_JSON_V1` is a self-describing JSON interchange.
+ */
+export const IntegrationFormat = z.enum(['ESTIMATING_CSV_V1', 'ACCOUNTING_JSON_V1']);
+export type IntegrationFormat = z.infer<typeof IntegrationFormat>;

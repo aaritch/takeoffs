@@ -15,6 +15,7 @@ import { ConditionError } from '../modules/conditions/errors';
 import { MeasurementError } from '../modules/measurements/errors';
 import { OrderError } from '../modules/orders/errors';
 import { BillingError } from '../modules/billing/errors';
+import { IntegrationExportError } from '../modules/reports/integration';
 import { SourceFileError } from '../modules/source-files/errors';
 import { withRequestContext } from './observability';
 
@@ -80,6 +81,10 @@ function mapError(err: unknown): { status: number; body: ErrorEnvelope } {
   if (err instanceof BillingError) {
     // QUOTA_EXCEEDED / FEATURE_NOT_AVAILABLE → 402 (upgrade to continue).
     return { status: 402, body: envelope(err.code, err.message) };
+  }
+  if (err instanceof IntegrationExportError) {
+    // Malformed/partial data → 422; we refuse rather than emit a corrupt file (P4-08).
+    return { status: 422, body: envelope(err.code, err.message) };
   }
   throw err;
 }

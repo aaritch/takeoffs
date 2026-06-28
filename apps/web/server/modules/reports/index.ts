@@ -14,3 +14,10 @@ export { renderReport, totalExtendedCostMinor } from './render';
 export type { ReportConditionRow, ReportData } from './render';
 export { checkParity, assertExportParity } from './parity';
 export type { ParityMismatch } from './parity';
+export {
+  renderIntegrationExport,
+  assertExportable,
+  IntegrationExportError,
+  FORMAT_VERSIONS,
+} from './integration';
+export type { RenderedIntegrationExport } from './integration';
