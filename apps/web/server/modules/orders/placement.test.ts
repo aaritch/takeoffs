@@ -8,7 +8,7 @@ import { createDb, type DbHandle } from '../../data/client';
 import { withOrgScope } from '../../data/org-scope';
 import { accountsService } from '../accounts';
 import type { PaymentAuthorizer } from '../payments';
-import { retainersRepo } from '../payments';
+import { retainerService } from '../payments';
 import { seedGlobalPricingRules } from '../pricing';
 import { projectsRepo } from '../projects/repository';
 import { planSetsRepo } from '../source-files/repository';
@@ -37,7 +37,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await admin.db.execute(
-    sql`TRUNCATE retainers, order_events, orders, plan_sets, projects, memberships, service_profiles, organizations, users, pricing_rules RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE retainer_ledger_entries, retainers, order_events, orders, plan_sets, projects, memberships, service_profiles, organizations, users, pricing_rules RESTART IDENTITY CASCADE`,
   );
   await seedGlobalPricingRules(admin.db);
 });
@@ -114,26 +114,26 @@ describe('order placement (P3-03)', () => {
 
   it('a RETAINER_DRAW order draws down the retainer balance and is placed', async () => {
     const { orgId, orderId, amount } = await quotedOrder('retainer', 'RETAINER_DRAW');
-    await withOrgScope(app.db, orgId, (tx) => retainersRepo.upsertBalance(tx, amount + 10000));
+    await withOrgScope(app.db, orgId, (tx) => retainerService.topUp(tx, orgId, amount + 10000));
 
     const placed = await withOrgScope(app.db, orgId, (tx) =>
       ordersService.place(tx, orderId, actor),
     );
     expect(placed.status).toBe('PLACED');
-    const retainer = await withOrgScope(app.db, orgId, (tx) => retainersRepo.getByOrg(tx, orgId));
+    const retainer = await withOrgScope(app.db, orgId, (tx) => retainerService.getByOrg(tx, orgId));
     expect(retainer?.balance_minor).toBe(10000); // (amount + 10000) − amount
   });
 
   it('an insufficient retainer blocks placement and leaves the balance untouched', async () => {
     const { orgId, orderId, amount } = await quotedOrder('broke', 'RETAINER_DRAW');
-    await withOrgScope(app.db, orgId, (tx) => retainersRepo.upsertBalance(tx, amount - 1));
+    await withOrgScope(app.db, orgId, (tx) => retainerService.topUp(tx, orgId, amount - 1));
 
     await expect(
       withOrgScope(app.db, orgId, (tx) => ordersService.place(tx, orderId, actor)),
     ).rejects.toMatchObject({ code: 'PAYMENT_REQUIRED' });
 
     expect((await get(orgId, orderId))?.status).toBe('QUOTED');
-    const retainer = await withOrgScope(app.db, orgId, (tx) => retainersRepo.getByOrg(tx, orgId));
+    const retainer = await withOrgScope(app.db, orgId, (tx) => retainerService.getByOrg(tx, orgId));
     expect(retainer?.balance_minor).toBe(amount - 1); // unchanged
   });
 

@@ -1,44 +1,61 @@
 import { and, eq, gte, sql } from 'drizzle-orm';
-import { currentOrgId, type OrgScopedTx } from '../../data/org-scope';
+import type { OrgScopedTx } from '../../data/org-scope';
 import { retainers } from '../../data/schema';
 
 export type Retainer = typeof retainers.$inferSelect;
 
 /**
- * Retainer balance access (P3-03 stub). The full retainer lifecycle is Phase 4 (P4-03); here we
- * only need to read a balance and draw against it at placement.
+ * Low-level retainer balance access (P4-03). The cached `balance_minor` is only ever changed through
+ * these atomic primitives, and ALWAYS paired with a retainer-ledger entry in the same transaction by
+ * {@link retainerService} — never mutated in place on its own (the caveat).
  */
 export const retainersRepo = {
   async getByOrg(tx: OrgScopedTx, orgId: string): Promise<Retainer | undefined> {
     return tx.query.retainers.findFirst({ where: eq(retainers.org_id, orgId) });
   },
 
-  /** Set (insert or update) an org's retainer balance — placeholder for the Phase-4 top-up flow. */
-  async upsertBalance(tx: OrgScopedTx, balanceMinor: number): Promise<Retainer> {
-    const orgId = await currentOrgId(tx);
+  /** Get the org's retainer, creating it at zero balance if it doesn't exist yet. */
+  async ensure(tx: OrgScopedTx, orgId: string): Promise<Retainer> {
+    const existing = await this.getByOrg(tx, orgId);
+    if (existing) return existing;
     const [row] = await tx
       .insert(retainers)
-      .values({ org_id: orgId, balance_minor: balanceMinor })
-      .onConflictDoUpdate({
-        target: retainers.org_id,
-        set: { balance_minor: balanceMinor, updated_at: new Date() },
-      })
+      .values({ org_id: orgId, balance_minor: 0 })
+      .onConflictDoNothing({ target: retainers.org_id })
       .returning();
-    return row!;
+    return row ?? (await this.getByOrg(tx, orgId))!;
+  },
+
+  /** Atomically add to the balance (a credit). Returns the new balance. */
+  async increment(tx: OrgScopedTx, retainerId: string, amountMinor: number): Promise<number> {
+    const [row] = await tx
+      .update(retainers)
+      .set({
+        balance_minor: sql`${retainers.balance_minor} + ${amountMinor}`,
+        updated_at: new Date(),
+      })
+      .where(eq(retainers.id, retainerId))
+      .returning({ balance_minor: retainers.balance_minor });
+    return row!.balance_minor;
   },
 
   /**
-   * Atomically draw `amountMinor` from the org's retainer if (and only if) the balance covers it.
-   * Returns the new balance, or null when there's no retainer / insufficient funds (no change made).
+   * Atomically draw `amountMinor` if (and only if) the balance covers it. Returns the new balance, or
+   * null when there are insufficient funds (no change made) — the conditional `balance >= amount`
+   * guard makes the check-and-debit a single statement, so concurrent draws can't overdraw.
    */
-  async draw(tx: OrgScopedTx, orgId: string, amountMinor: number): Promise<number | null> {
+  async drawIfSufficient(
+    tx: OrgScopedTx,
+    retainerId: string,
+    amountMinor: number,
+  ): Promise<number | null> {
     const [row] = await tx
       .update(retainers)
       .set({
         balance_minor: sql`${retainers.balance_minor} - ${amountMinor}`,
         updated_at: new Date(),
       })
-      .where(and(eq(retainers.org_id, orgId), gte(retainers.balance_minor, amountMinor)))
+      .where(and(eq(retainers.id, retainerId), gte(retainers.balance_minor, amountMinor)))
       .returning({ balance_minor: retainers.balance_minor });
     return row ? row.balance_minor : null;
   },

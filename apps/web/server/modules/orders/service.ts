@@ -8,7 +8,7 @@ import type {
 import { currentOrgId, type OrgScopedTx } from '../../data/org-scope';
 import { sheetsRepo } from '../ingestion';
 import { meteringService } from '../billing';
-import { stubAuthorizer, retainersRepo, type PaymentAuthorizer } from '../payments';
+import { stubAuthorizer, retainerService, type PaymentAuthorizer } from '../payments';
 import { computeQuote, pricingRulesRepo } from '../pricing';
 import { NotFound, PaymentRequired, ValidationFailed } from './errors';
 import { ordersRepo, type Order, type OrderEvent } from './repository';
@@ -197,7 +197,10 @@ export const ordersService = {
 
     let payload: Record<string, unknown>;
     if (order.service_tier === 'RETAINER_DRAW') {
-      const newBalance = await retainersRepo.draw(tx, order.org_id, amount);
+      // Draw against the prepaid balance; the debit + its ledger entry commit with the placement.
+      const newBalance = await retainerService.draw(tx, order.org_id, amount, {
+        orderId: order.id,
+      });
       if (newBalance === null) throw PaymentRequired('Insufficient retainer balance');
       payload = { paymentMethod: 'RETAINER', retainerBalanceMinor: newBalance };
     } else {

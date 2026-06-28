@@ -16,6 +16,7 @@ export * from './detection-feedback';
 export * from './orders';
 export * from './pricing-rules';
 export * from './retainers';
+export * from './retainer-ledger-entries';
 export * from './subscriptions';
 export * from './billing-events';
 export * from './usage-records';

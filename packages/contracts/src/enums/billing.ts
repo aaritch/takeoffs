@@ -40,3 +40,12 @@ export type ReportTemplate = z.infer<typeof ReportTemplate>;
  */
 export const ReportStatus = z.enum(['QUEUED', 'GENERATING', 'READY', 'FAILED']);
 export type ReportStatus = z.infer<typeof ReportStatus>;
+
+/**
+ * Retainer ledger entry type (spec §11.5, P4-03). The retainer balance is the running sum of an
+ * append-only ledger: TOP_UP credits it (a prepaid deposit), DRAW debits it (a managed order drawn
+ * against it), REVERSAL credits back a prior draw (e.g. a cancelled/disputed order). Amounts are
+ * stored signed (credits positive, draws negative) so the ledger sums to the balance.
+ */
+export const RetainerLedgerEntryType = z.enum(['TOP_UP', 'DRAW', 'REVERSAL']);
+export type RetainerLedgerEntryType = z.infer<typeof RetainerLedgerEntryType>;

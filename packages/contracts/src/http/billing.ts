@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PlanTier } from '../enums/accounts';
-import { SubscriptionStatus, UsageMetric } from '../enums/billing';
+import { RetainerLedgerEntryType, SubscriptionStatus, UsageMetric } from '../enums/billing';
 
 /**
  * Subscriptions & seats (P4-01). The payment provider is the source of truth for subscription and
@@ -115,3 +115,43 @@ export type UsageSummaryView = z.infer<typeof UsageSummaryView>;
 
 export const UsageSummaryResponse = z.object({ usage: UsageSummaryView });
 export type UsageSummaryResponse = z.infer<typeof UsageSummaryResponse>;
+
+/**
+ * Retainers & draw-down (P4-03). An org's prepaid managed-service balance, backed by an append-only
+ * ledger; the balance is the running sum of the ledger and reconciles to it at all times. Money is
+ * integer minor units (cents) with an ISO-4217 code.
+ */
+export const RetainerView = z.object({
+  id: z.string().uuid(),
+  orgId: z.string().uuid(),
+  balanceMinor: z.number().int(),
+  currency: z.string(),
+  updatedAt: z.string().datetime(),
+});
+export type RetainerView = z.infer<typeof RetainerView>;
+
+export const RetainerLedgerEntryView = z.object({
+  id: z.string().uuid(),
+  entryType: RetainerLedgerEntryType,
+  amountMinor: z.number().int(),
+  balanceAfterMinor: z.number().int(),
+  referenceType: z.string().nullable(),
+  referenceId: z.string().nullable(),
+  description: z.string().nullable(),
+  createdAt: z.string().datetime(),
+});
+export type RetainerLedgerEntryView = z.infer<typeof RetainerLedgerEntryView>;
+
+/** GET /v1/billing/retainer — the org's retainer balance + its recent ledger (newest first). */
+export const RetainerResponse = z.object({
+  retainer: RetainerView.nullable(),
+  ledger: z.array(RetainerLedgerEntryView),
+});
+export type RetainerResponse = z.infer<typeof RetainerResponse>;
+
+/** POST /v1/billing/retainer/top-ups — add funds to the retainer (after the payment is secured). */
+export const TopUpRetainerRequest = z.object({
+  amountMinor: z.number().int().positive(),
+  paymentReference: z.string().optional(),
+});
+export type TopUpRetainerRequest = z.infer<typeof TopUpRetainerRequest>;
