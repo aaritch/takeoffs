@@ -54,9 +54,10 @@ export const ordersRepo = {
   },
 
   async listEvents(tx: OrgScopedTx, orderId: string): Promise<OrderEvent[]> {
+    // Chronological; the uuid v7 id breaks ties so events written in the same ms keep insertion order.
     return tx.query.orderEvents.findMany({
       where: eq(orderEvents.order_id, orderId),
-      orderBy: [asc(orderEvents.occurred_at)],
+      orderBy: [asc(orderEvents.occurred_at), asc(orderEvents.id)],
     });
   },
 

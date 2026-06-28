@@ -6,5 +6,6 @@ export type { Actor, CreateOrderInput } from './service';
 export { ordersRepo } from './repository';
 export type { Order, OrderEvent } from './repository';
 export { canTransition, legalTransitions, isTerminal, assertTransition } from './state-machine';
+export { isContiguousAuditTrail, isCompleteAuditEvent } from './audit';
 export { OrderError } from './errors';
 export type { OrderErrorCode } from './errors';

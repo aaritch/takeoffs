@@ -176,6 +176,13 @@
       "when": 1782563440204,
       "tag": "0024_quiet_cloak",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1782563441704,
+      "tag": "0025_order_events_immutable",
+      "breakpoints": true
     }
   ]
 }
