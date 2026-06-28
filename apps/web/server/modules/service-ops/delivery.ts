@@ -4,6 +4,7 @@ import { NotFound } from '../orders/errors';
 import { ordersRepo, type Order } from '../orders/repository';
 import { ordersService, DISPUTE_WINDOW_HOURS, type Actor } from '../orders';
 import { loggingOrderNotifier, type OrderNotifier } from './notifier';
+import { payoutService } from './payouts';
 
 /**
  * Delivery → acceptance / dispute (P3-07). After QA delivers, the CUSTOMER accepts (→ ACCEPTED,
@@ -62,17 +63,24 @@ export const deliveryService = {
    */
   async autoAcceptExpired(db: DB, now: Date, deps: Deps = defaults): Promise<string[]> {
     const cutoff = new Date(now.getTime() - DISPUTE_WINDOW_HOURS * 3_600_000);
-    return db.transaction(async (tx) => {
+    const accepted = await db.transaction(async (tx) => {
       const expired = await ordersRepo.listDeliveredBefore(tx, cutoff);
-      const accepted: string[] = [];
+      const ids: string[] = [];
       for (const order of expired) {
         await ordersService.transition(tx, order.id, 'ACCEPTED', SYSTEM_ACTOR, {
           payload: { autoAccepted: true },
         });
         await deps.notifier.accepted({ orderId: order.id, orgId: order.org_id });
-        accepted.push(order.id);
+        ids.push(order.id);
       }
-      return accepted;
+      return ids;
     });
+    // Settle the estimator payout for each auto-accepted order — AFTER the transitions commit, since
+    // the provider transfer is an external side effect that must not run inside the DB transaction
+    // (P4-04 gate: payout only on acceptance/auto-accept).
+    for (const orderId of accepted) {
+      await payoutService.processAcceptedOrder(db, orderId);
+    }
+    return accepted;
   },
 };

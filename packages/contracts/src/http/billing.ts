@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { PlanTier } from '../enums/accounts';
-import { RetainerLedgerEntryType, SubscriptionStatus, UsageMetric } from '../enums/billing';
+import {
+  PayoutStatus,
+  RetainerLedgerEntryType,
+  SubscriptionStatus,
+  UsageMetric,
+} from '../enums/billing';
 
 /**
  * Subscriptions & seats (P4-01). The payment provider is the source of truth for subscription and
@@ -155,3 +160,32 @@ export const TopUpRetainerRequest = z.object({
   paymentReference: z.string().optional(),
 });
 export type TopUpRetainerRequest = z.infer<typeof TopUpRetainerRequest>;
+
+/**
+ * Estimator payouts (spec §5.6/§11.5, P4-04). A payout is created + settled only when its order is
+ * ACCEPTED (or auto-accepted); disputes never pay out. Higher-stakes than payments in, so it carries
+ * full status + provider-reference history for reconciliation.
+ */
+export const PayoutView = z.object({
+  id: z.string().uuid(),
+  serviceProfileId: z.string().uuid(),
+  orderId: z.string().uuid(),
+  amountMinor: z.number().int(),
+  currency: z.string(),
+  status: PayoutStatus,
+  providerTransferRef: z.string().nullable(),
+  providerReversalRef: z.string().nullable(),
+  reversalReason: z.string().nullable(),
+  settledAt: z.string().datetime().nullable(),
+  reversedAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+});
+export type PayoutView = z.infer<typeof PayoutView>;
+
+/** GET /v1/ops/payouts — payouts (platform view), optionally filtered by estimator. */
+export const PayoutsResponse = z.object({ payouts: z.array(PayoutView) });
+export type PayoutsResponse = z.infer<typeof PayoutsResponse>;
+
+/** POST /v1/ops/payouts/{id}/reverse — reverse a settled payout (platform admin). */
+export const ReversePayoutRequest = z.object({ reason: z.string().min(1) });
+export type ReversePayoutRequest = z.infer<typeof ReversePayoutRequest>;

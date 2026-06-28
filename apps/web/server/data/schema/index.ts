@@ -20,3 +20,4 @@ export * from './retainer-ledger-entries';
 export * from './subscriptions';
 export * from './billing-events';
 export * from './usage-records';
+export * from './payout-records';

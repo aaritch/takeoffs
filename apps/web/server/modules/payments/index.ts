@@ -11,3 +11,10 @@ export type { RetainerLedgerEntry } from './ledger';
 export { retainerService } from './retainer-service';
 export type { TopUpOptions, DrawOptions } from './retainer-service';
 export { retainerToView, ledgerEntryToView, RETAINER_CURRENCY } from './view';
+export { stubPayoutProvider } from './payout-provider';
+export type {
+  PayoutProvider,
+  PayoutTransferRequest,
+  PayoutReversalRequest,
+  PayoutResult,
+} from './payout-provider';
