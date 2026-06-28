@@ -246,6 +246,20 @@
       "when": 1782635126651,
       "tag": "0034_org_rls_assemblies",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1782650338129,
+      "tag": "0035_cute_black_widow",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1782650339629,
+      "tag": "0036_org_rls_webhooks",
+      "breakpoints": true
     }
   ]
 }
