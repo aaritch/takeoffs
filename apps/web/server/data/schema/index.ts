@@ -24,3 +24,4 @@ export * from './billing-events';
 export * from './usage-records';
 export * from './payout-records';
 export * from './webhooks';
+export * from './dr-drill-runs';
