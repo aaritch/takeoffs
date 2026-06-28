@@ -15,3 +15,4 @@ export * from './review';
 export * from './orders';
 export * from './pricing';
 export * from './qa';
+export * from './ops';

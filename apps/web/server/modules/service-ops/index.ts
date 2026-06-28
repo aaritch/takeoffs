@@ -10,6 +10,8 @@ export type { QaChecklist, QaAttestation } from './qa';
 export { deliveryService } from './delivery';
 export { loggingOrderNotifier } from './notifier';
 export type { OrderNotifier, OrderNotice } from './notifier';
+export { opsDashboardService, computeSla, SLA_RISK_FRACTION } from './ops-dashboard';
+export type { OrderSla } from './ops-dashboard';
 export { serviceProfilesRepo } from './repository';
 export type { ServiceProfile } from './repository';
 export { isEligible, pickEstimator, specialtiesMatch } from './eligibility';
