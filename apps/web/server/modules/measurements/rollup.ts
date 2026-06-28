@@ -2,6 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { OrgScopedTx } from '../../data/org-scope';
 import { conditions, quantityRollups } from '../../data/schema';
 import { computeConditionQuantities } from '../conditions/quantities';
+import { assembliesRepo } from '../assemblies/repository';
 import { measurementsRepo } from './repository';
 import { NotFound } from './errors';
 
@@ -24,6 +25,10 @@ export async function recomputeRollup(
   }
 
   const { sum, count } = await measurementsRepo.aggregateForCondition(tx, conditionId);
+  // A condition's base also includes any assembly contribution (driver base × factor), so a child
+  // condition of an assembly reflects every draw against it (P4-07). This is the working/provisional
+  // total; the FINAL report applies the scale gate to assembly instances too (buildReportData).
+  const asm = await assembliesRepo.contributionForCondition(tx, conditionId);
   const q = computeConditionQuantities(
     {
       measurement_type: condition.measurement_type,
@@ -32,7 +37,7 @@ export async function recomputeRollup(
       waste_factor_pct: condition.waste_factor_pct,
       unit_cost_minor: condition.unit_cost_minor,
     },
-    sum,
+    sum + asm.sum,
   );
 
   const now = new Date();
@@ -44,7 +49,7 @@ export async function recomputeRollup(
     derived_volume: q.derivedVolumeCuFt,
     derived_surface_area: q.derivedSurfaceSqFt,
     extended_cost_minor: q.extendedCostMinor,
-    measurement_count: count,
+    measurement_count: count + asm.count,
     last_computed_at: now,
   };
 

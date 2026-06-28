@@ -1,6 +1,7 @@
 import type { OrgScopedTx } from '../../data/org-scope';
 import { computeConditionQuantities } from '../conditions/quantities';
 import { conditionsRepo } from '../conditions/repository';
+import { assembliesRepo } from '../assemblies/repository';
 import { measurementsRepo } from '../measurements';
 import { takeoffsRepo } from '../takeoffs/repository';
 import { NotFound } from '../source-files/errors';
@@ -29,6 +30,11 @@ export async function buildReportData(tx: OrgScopedTx, takeoffId: string): Promi
       tx,
       condition.id,
     );
+    // Assembly contributions count toward the final report too, scale-gated the same way as
+    // measurements: an assembly instance on an unconfirmed-scale sheet is provisional and excluded.
+    const asm = await assembliesRepo.contributionForCondition(tx, condition.id, {
+      confirmedScaleOnly: true,
+    });
     const q = computeConditionQuantities(
       {
         measurement_type: condition.measurement_type,
@@ -37,7 +43,7 @@ export async function buildReportData(tx: OrgScopedTx, takeoffId: string): Promi
         waste_factor_pct: condition.waste_factor_pct,
         unit_cost_minor: condition.unit_cost_minor,
       },
-      sum,
+      sum + asm.sum,
     );
     const trade = tradeById.get(condition.trade_category_id);
     rows.push({
@@ -50,7 +56,7 @@ export async function buildReportData(tx: OrgScopedTx, takeoffId: string): Promi
       unit: condition.unit,
       baseQuantity: q.baseQuantity,
       quantityWithWaste: q.quantityWithWaste,
-      measurementCount: count,
+      measurementCount: count + asm.count,
       derivedVolume: q.derivedVolumeCuFt,
       derivedSurfaceArea: q.derivedSurfaceSqFt,
       unitCostMinor: condition.unit_cost_minor ?? null,

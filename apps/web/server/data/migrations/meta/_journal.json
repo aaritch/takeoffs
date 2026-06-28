@@ -232,6 +232,20 @@
       "when": 1782633480591,
       "tag": "0032_tired_mother_askani",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1782635125151,
+      "tag": "0033_chubby_darkstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1782635126651,
+      "tag": "0034_org_rls_assemblies",
+      "breakpoints": true
     }
   ]
 }
