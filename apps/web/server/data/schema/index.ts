@@ -11,6 +11,7 @@ export * from './takeoffs';
 export * from './conditions';
 export * from './assemblies';
 export * from './measurements';
+export * from './comments';
 export * from './quantity-rollups';
 export * from './reports';
 export * from './model-runs';
