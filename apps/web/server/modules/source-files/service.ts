@@ -30,7 +30,7 @@ export function planSetToView(ps: PlanSet): PlanSetView {
   };
 }
 
-function toView(sf: SourceFile): SourceFileView {
+export function sourceFileToView(sf: SourceFile): SourceFileView {
   return {
     id: sf.id,
     planSetId: sf.plan_set_id,
@@ -148,7 +148,7 @@ export const sourceFilesService = {
     const orgId = await currentOrgId(tx);
     const sf = await sourceFilesRepo.getById(tx, input.sourceFileId);
     if (!sf) throw NotFound();
-    if (sf.upload_status === 'UPLOADED') return toView(sf);
+    if (sf.upload_status === 'UPLOADED') return sourceFileToView(sf);
 
     // The completion must report the same size/checksum declared at init (no moving the goalposts).
     if (input.byteSize !== sf.byte_size || input.checksumSha256 !== sf.checksum_sha256) {
@@ -170,7 +170,7 @@ export const sourceFilesService = {
         upload_status: 'REJECTED',
         error_detail: result.reason,
       });
-      return toView(rejected ?? sf);
+      return sourceFileToView(rejected ?? sf);
     }
 
     const updated = await sourceFilesRepo.update(tx, sf.id, { upload_status: 'UPLOADED' });
@@ -181,6 +181,6 @@ export const sourceFilesService = {
       storageKey: sf.storage_key,
       checksumSha256: sf.checksum_sha256,
     });
-    return toView(updated ?? sf);
+    return sourceFileToView(updated ?? sf);
   },
 };

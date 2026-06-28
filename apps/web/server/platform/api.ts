@@ -16,6 +16,7 @@ import { MeasurementError } from '../modules/measurements/errors';
 import { OrderError } from '../modules/orders/errors';
 import { BillingError } from '../modules/billing/errors';
 import { IntegrationExportError } from '../modules/reports/integration';
+import { CloudImportError } from '../modules/cloud-import/errors';
 import { SourceFileError } from '../modules/source-files/errors';
 import { withRequestContext } from './observability';
 
@@ -85,6 +86,11 @@ function mapError(err: unknown): { status: number; body: ErrorEnvelope } {
   if (err instanceof IntegrationExportError) {
     // Malformed/partial data → 422; we refuse rather than emit a corrupt file (P4-08).
     return { status: 422, body: envelope(err.code, err.message) };
+  }
+  if (err instanceof CloudImportError) {
+    // PERMISSION_DENIED → 403; otherwise a 422 import failure (P5-05).
+    const status = err.code === 'PERMISSION_DENIED' ? 403 : 422;
+    return { status, body: envelope(err.code, err.message) };
   }
   throw err;
 }
