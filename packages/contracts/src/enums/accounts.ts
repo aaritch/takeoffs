@@ -32,6 +32,10 @@ export type ServiceRole = z.infer<typeof ServiceRole>;
 export const PlanTier = z.enum(['FREE', 'STARTER', 'PRO', 'RETAINER']);
 export type PlanTier = z.infer<typeof PlanTier>;
 
+/** Enterprise SSO protocol for an org's identity provider (spec §13, P5-02). */
+export const SsoProtocol = z.enum(['SAML', 'OIDC']);
+export type SsoProtocol = z.infer<typeof SsoProtocol>;
+
 /**
  * Organization account status (spec §5.1, Organization.status).
  * Transitions (provisional, enforced with billing in Phase 4): ACTIVE ↔ PAST_DUE,
