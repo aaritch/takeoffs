@@ -116,6 +116,7 @@ async function setupSheet(
       name: slug,
       slug,
       owner: { email: `${slug}@t.test` },
+      planTier: 'PRO', // AI takeoff runs are a paid entitlement (P4-02 quota); FREE excludes them.
     })
   ).organization.id;
 

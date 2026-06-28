@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PlanTier } from '../enums/accounts';
-import { SubscriptionStatus } from '../enums/billing';
+import { SubscriptionStatus, UsageMetric } from '../enums/billing';
 
 /**
  * Subscriptions & seats (P4-01). The payment provider is the source of truth for subscription and
@@ -78,3 +78,40 @@ export const BillingWebhookResponse = z.object({
   reason: z.string().optional(),
 });
 export type BillingWebhookResponse = z.infer<typeof BillingWebhookResponse>;
+
+/**
+ * Usage metering & quotas (P4-02). Billable events (AI takeoff runs, managed orders, exports) are
+ * metered as UsageRecords exactly-once relative to the underlying action; quotas are enforced per
+ * plan and surfaced to the customer. `-1` limit means unlimited.
+ */
+export const UsageRecordView = z.object({
+  id: z.string().uuid(),
+  metric: UsageMetric,
+  quantity: z.number().int(),
+  referenceId: z.string().uuid(),
+  period: z.string(),
+  billed: z.boolean(),
+  occurredAt: z.string().datetime(),
+});
+export type UsageRecordView = z.infer<typeof UsageRecordView>;
+
+/** Per-metric usage for a billing period: how much used against the plan's limit. */
+export const MetricUsageView = z.object({
+  metric: UsageMetric,
+  used: z.number().int(),
+  limit: z.number().int(),
+  remaining: z.number().int(),
+  overQuota: z.boolean(),
+});
+export type MetricUsageView = z.infer<typeof MetricUsageView>;
+
+/** GET /v1/billing/usage — the org's current-period usage across all metered events. */
+export const UsageSummaryView = z.object({
+  period: z.string(),
+  planTier: PlanTier,
+  metrics: z.array(MetricUsageView),
+});
+export type UsageSummaryView = z.infer<typeof UsageSummaryView>;
+
+export const UsageSummaryResponse = z.object({ usage: UsageSummaryView });
+export type UsageSummaryResponse = z.infer<typeof UsageSummaryResponse>;

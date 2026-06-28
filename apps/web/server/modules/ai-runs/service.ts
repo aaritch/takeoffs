@@ -7,6 +7,7 @@ import type {
 import { currentOrgId, type OrgScopedTx } from '../../data/org-scope';
 import { planSetsRepo } from '../source-files/repository';
 import { NotFound } from '../source-files/errors';
+import { meteringService } from '../billing';
 import { ingestSheetCandidates } from './ingest';
 import { modelRunsRepo, type ModelRun } from './repository';
 
@@ -42,18 +43,25 @@ export function modelRunToView(run: ModelRun): ModelRunView {
 }
 
 export const aiRunsService = {
-  /** Create a QUEUED run over a plan set. The caller enqueues per-sheet InferenceJobs after commit. */
+  /**
+   * Create a QUEUED run over a plan set. The caller enqueues per-sheet InferenceJobs after commit.
+   * An AI run is a billable event (P4-02): it's metered exactly-once and its plan quota enforced in
+   * this transaction — over a BLOCK quota, the run is rejected and rolled back before any GPU work.
+   */
   async startRun(tx: OrgScopedTx, input: StartModelRunInput): Promise<ModelRun> {
     const planSet = await planSetsRepo.getById(tx, input.planSetId);
     if (!planSet) throw NotFound('Plan set not found');
-    return modelRunsRepo.insert(tx, {
-      org_id: await currentOrgId(tx),
+    const orgId = await currentOrgId(tx);
+    const run = await modelRunsRepo.insert(tx, {
+      org_id: orgId,
       plan_set_id: input.planSetId,
       trigger: input.trigger ?? 'USER_REQUESTED',
       pipeline_version: input.pipelineVersion,
       model_versions: input.modelVersions ?? {},
       status: 'QUEUED',
     });
+    await meteringService.meter(tx, { orgId, metric: 'AI_TAKEOFF_RUN', referenceId: run.id });
+    return run;
   },
 
   /** Mark a run RUNNING (idempotent), stamping started_at the first time. */

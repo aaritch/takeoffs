@@ -18,3 +18,4 @@ export * from './pricing-rules';
 export * from './retainers';
 export * from './subscriptions';
 export * from './billing-events';
+export * from './usage-records';

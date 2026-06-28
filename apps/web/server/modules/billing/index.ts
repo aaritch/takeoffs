@@ -12,3 +12,16 @@ export {
 } from './repository';
 export { subscriptionToView } from './view';
 export { stubBillingProvider, type BillingProvider } from './provider';
+// Usage metering & quotas (P4-02).
+export { meteringService, type MeterInput } from './metering';
+export { usageRecordsRepo, type UsageRecord } from './usage-repo';
+export {
+  quotaDecision,
+  metricLimit,
+  billingPeriod,
+  QUOTA_POLICY,
+  type QuotaDecision,
+  type QuotaPolicy,
+  type QuotaOutcome,
+} from './quota';
+export { BillingError, QuotaExceeded, FeatureNotAvailable, type BillingErrorCode } from './errors';

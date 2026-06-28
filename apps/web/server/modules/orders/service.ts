@@ -7,6 +7,7 @@ import type {
 } from '@takeoff/contracts';
 import { currentOrgId, type OrgScopedTx } from '../../data/org-scope';
 import { sheetsRepo } from '../ingestion';
+import { meteringService } from '../billing';
 import { stubAuthorizer, retainersRepo, type PaymentAuthorizer } from '../payments';
 import { computeQuote, pricingRulesRepo } from '../pricing';
 import { NotFound, PaymentRequired, ValidationFailed } from './errors';
@@ -185,6 +186,13 @@ export const ordersService = {
     if (order.price_quote_minor == null) {
       throw ValidationFailed('Order must be quoted before it can be placed', 'status');
     }
+    // A managed order is a billable event (P4-02): meter it exactly-once in this transaction, before
+    // charging — so a rolled-back placement leaves no usage.
+    await meteringService.meter(tx, {
+      orgId: order.org_id,
+      metric: 'MANAGED_ORDER',
+      referenceId: order.id,
+    });
     const amount = order.price_quote_minor;
 
     let payload: Record<string, unknown>;

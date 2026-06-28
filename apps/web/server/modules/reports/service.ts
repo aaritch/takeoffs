@@ -4,6 +4,7 @@ import type { StorageAdapter } from '../../storage';
 import { assertKeyInOrg } from '../../storage/keys';
 import { takeoffsRepo } from '../takeoffs/repository';
 import { NotFound, ValidationFailed } from '../source-files/errors';
+import { meteringService } from '../billing';
 import { reportsRepo, type Report } from './repository';
 
 export interface RequestReportInput {
@@ -23,13 +24,19 @@ export const reportsService = {
     const takeoff = await takeoffsRepo.getById(tx, input.takeoffId);
     if (!takeoff) throw NotFound('Takeoff not found');
 
-    return reportsRepo.insert(tx, {
-      org_id: await currentOrgId(tx),
+    const orgId = await currentOrgId(tx);
+    const report = await reportsRepo.insert(tx, {
+      org_id: orgId,
       takeoff_id: input.takeoffId,
       template: input.template,
       format: 'CSV',
       status: 'QUEUED',
     });
+    // An export is a billable event (P4-02): metered exactly-once; exports beyond the plan quota are
+    // recorded as billed overage (EXPORT policy is OVERAGE, so it's never blocked — the report row
+    // IS the meterable event).
+    await meteringService.meter(tx, { orgId, metric: 'EXPORT', referenceId: report.id });
+    return report;
   },
 
   getById(tx: OrgScopedTx, id: string): Promise<Report | undefined> {
