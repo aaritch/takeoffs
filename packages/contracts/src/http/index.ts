@@ -16,3 +16,4 @@ export * from './orders';
 export * from './pricing';
 export * from './qa';
 export * from './ops';
+export * from './billing';
