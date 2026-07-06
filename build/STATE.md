@@ -194,7 +194,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P5-05 | Cloud-storage import | none | no | aarit | DONE |
 | P5-06 | Security review and penetration test | P0-07 | no | aarit | IN_REVIEW |
 
-**Totals:** 59 tasks. 11 DONE / 1 IN_PROGRESS / 1 IN_REVIEW / 0 BLOCKED / 46 NOT_STARTED. Update these counts as you go.
+**Totals:** 59 tasks. **49 DONE / 0 IN_PROGRESS / 1 IN_REVIEW (P5-06 external pen test) / 0 BLOCKED / 9 NOT_STARTED.** The 9 not-started are all GPU-compute-home-blocked: 7 Phase-2 inference-half tasks + P4-05 + P4-06. Update these counts as you go.
 
 ---
 
