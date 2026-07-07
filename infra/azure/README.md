@@ -8,15 +8,15 @@ inferring, never for idle nodes).
 
 ## Provisioned (2026-07-06)
 
-| Resource | Name | Notes |
-| --- | --- | --- |
-| Subscription | `Azure subscription 1` (`11ac026d-…`) | tenant `864774d8-…` (same as the Entra OIDC app) |
-| Region | **westus3** | supports Container Apps + Consumption/dedicated GPU (for the SKU swap later) |
-| Resource group | `rg-takeoff-ai` | tag `project=takeoff-ai` |
-| Container registry | `crtakeoffai11ac02.azurecr.io` | Basic, admin-enabled |
-| Log Analytics | `log-takeoff-ai` | Container Apps logs |
-| Container Apps env | `cae-takeoff-ai` | Consumption; scale-to-zero capable |
-| Providers registered | Microsoft.Compute / App / ContainerRegistry / OperationalInsights / Storage | |
+| Resource             | Name                                                                        | Notes                                                                        |
+| -------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Subscription         | `Azure subscription 1` (`11ac026d-…`)                                       | tenant `864774d8-…` (same as the Entra OIDC app)                             |
+| Region               | **westus3**                                                                 | supports Container Apps + Consumption/dedicated GPU (for the SKU swap later) |
+| Resource group       | `rg-takeoff-ai`                                                             | tag `project=takeoff-ai`                                                     |
+| Container registry   | `crtakeoffai11ac02.azurecr.io`                                              | Basic, admin-enabled                                                         |
+| Log Analytics        | `log-takeoff-ai`                                                            | Container Apps logs                                                          |
+| Container Apps env   | `cae-takeoff-ai`                                                            | Consumption; scale-to-zero capable                                           |
+| Providers registered | Microsoft.Compute / App / ContainerRegistry / OperationalInsights / Storage |                                                                              |
 
 Provisioning is captured in `provision.ps1` (idempotent; safe to re-run).
 
@@ -42,7 +42,7 @@ app plane (Vercel)  --enqueue InferenceJob-->  Upstash Redis (jobs:inference)
 
 1. **GPU quota = 0.** Fresh pay-as-you-go sub: `NCASv3_T4` / `NCADSA10v4` / `NCADS_A100_v4` all
    limit 0, Total Regional vCPUs 0/4. Request a T4 (Portal → Quotas → Compute → West US 3 →
-   *Standard NCASv3_T4 Family vCPUs* → 4). New subs are often denied until there's billing history.
+   _Standard NCASv3_T4 Family vCPUs_ → 4). New subs are often denied until there's billing history.
 2. **ACR Tasks (cloud `az acr build`) not permitted** on this new sub (`TasksOperationsNotAllowed`) —
    so images must be built elsewhere (local Docker or CI) and pushed. Azure support can enable it.
 3. **Local Docker Desktop won't start** (WSL bootstrap failure) on this machine — so no local build
