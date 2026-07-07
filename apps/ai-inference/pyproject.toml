@@ -3,13 +3,14 @@ name = "takeoff-ai-inference"
 version = "0.0.0"
 description = "AI inference plane for the Takeoff platform (processing/GPU). Phase 2."
 requires-python = ">=3.11"
-# Phase 2 (P2-01) only needs the contract mirror: validate stage payloads against the
-# language-neutral JSON Schema emitted by @takeoff/contracts. Model-serving / GPU deps land with
-# the inference skeleton (P2-02) once the compute home is chosen.
+# P2-01 needs the contract mirror (jsonschema). The worker skeleton's testable core has no extra
+# deps; the deployed worker adds `redis` (the broker driver) — see the `serving` extra. GPU model-
+# runtime deps land with the real detectors once the compute home + trained models exist.
 dependencies = ["jsonschema>=4.21"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+serving = ["redis>=5.0"]
 
 [tool.pytest.ini_options]
 # Make `app` importable when running pytest from this directory.
