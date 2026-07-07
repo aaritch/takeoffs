@@ -1,0 +1,1 @@
+ALTER TABLE "organizations" ADD COLUMN "training_opt_out" boolean DEFAULT false NOT NULL;

@@ -182,7 +182,7 @@ Columns: ID | Task | Depends on | Gate | Owner | Status. Update Owner and Status
 | P4-02 | Usage metering and quotas | P2-03, P1-13 | no | aarit | DONE |
 | P4-03 | Retainers and draw-down | P3-03 | no | aarit | DONE |
 | P4-04 | Estimator payouts | P3-07 | YES | aarit | DONE |
-| P4-05 | Training and evaluation pipeline | P2-11 | YES | - | NOT_STARTED |
+| P4-05 | Training and evaluation pipeline | P2-11 | YES | aarit | IN_PROGRESS |
 | P4-06 | Model promotion and rollback | P4-05, P2-02 | YES | aarit | DONE |
 | P4-07 | Assemblies | P1-10 | no | aarit | DONE |
 | P4-08 | Integration exports | P1-13 | no | aarit | DONE |

@@ -1,0 +1,17 @@
+[project]
+name = "takeoff-ml"
+version = "0.0.0"
+description = "Offline model lifecycle for the Takeoff platform: dataset assembly, training, evaluation, and the promotion payload. Phase 4 (P4-05). NEVER on the request path."
+requires-python = ">=3.11"
+# The pipeline mechanism (assembly / metrics / deterministic baseline trainer) is pure Python — no
+# heavy deps. Real training runtimes (torch, etc.) land per model family with the GPU compute home;
+# they plug into the same seams and don't change this package's contracts.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+# Make `takeoff_ml` importable when running pytest from this directory.
+pythonpath = ["."]
+testpaths = ["tests"]

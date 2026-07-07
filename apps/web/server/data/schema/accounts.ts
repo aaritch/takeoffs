@@ -34,6 +34,12 @@ export const organizations = pgTable('organizations', {
   plan_tier: text('plan_tier').$type<PlanTier>().notNull().default('FREE'),
   seat_limit: integer('seat_limit').notNull().default(3),
   status: text('status').$type<OrganizationStatus>().notNull().default('ACTIVE'),
+  /**
+   * Whether this org has opted OUT of having its review feedback used to train models (P4-05). The
+   * offline dataset-assembly pipeline drops opted-out orgs at assembly time — capture stays lossless
+   * (P2-11), only training use is gated. Default false (opted in).
+   */
+  training_opt_out: boolean('training_opt_out').notNull().default(false),
   created_by_user_id: uuid('created_by_user_id'),
   ...timestamps,
 });

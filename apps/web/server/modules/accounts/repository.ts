@@ -33,6 +33,27 @@ export const repo = {
     });
   },
 
+  async setTrainingOptOut(db: DB, id: string, optOut: boolean): Promise<Organization> {
+    const [row] = await db
+      .update(organizations)
+      .set({ training_opt_out: optOut, updated_at: new Date() })
+      .where(eq(organizations.id, id))
+      .returning();
+    return row!;
+  },
+
+  /**
+   * The org ids that opted OUT of training (P4-05). The export the offline dataset-assembly pipeline
+   * consumes to exclude their data — a platform-wide read, off the request path.
+   */
+  async listOptedOutOrgIds(db: DB): Promise<string[]> {
+    const rows = await db.query.organizations.findMany({
+      where: and(eq(organizations.training_opt_out, true), isNull(organizations.deleted_at)),
+      columns: { id: true },
+    });
+    return rows.map((r) => r.id);
+  },
+
   // --- users ---
   async insertUser(db: DB, values: typeof users.$inferInsert): Promise<User> {
     const [row] = await db.insert(users).values(values).returning();

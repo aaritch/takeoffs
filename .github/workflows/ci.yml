@@ -122,3 +122,23 @@ jobs:
       - name: Stage-contract parity tests
         working-directory: apps/ai-inference
         run: python -m pytest -q
+
+  # Offline model lifecycle (P4-05): dataset assembly (opt-out + benchmark-leak exclusion),
+  # evaluation metrics, and the training pipeline. Pure Python, no GPU — the mechanism is tested
+  # deterministically with synthetic data. NEVER on the request path.
+  ml-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ml pipeline
+        working-directory: ml
+        run: python -m pip install -e ".[dev]"
+
+      - name: Training/evaluation pipeline tests
+        working-directory: ml
+        run: python -m pytest -q

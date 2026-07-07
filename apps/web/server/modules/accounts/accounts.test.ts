@@ -247,3 +247,67 @@ describe('provisionFromIdentity (JIT login)', () => {
     expect(again.id).toBe(first.id);
   });
 });
+
+describe('training-data opt-out (P4-05)', () => {
+  it('defaults to opted-in and lets an OWNER opt out and back in', async () => {
+    const { organization, owner } = await seedOrg();
+    expect(await accountsService.getTrainingOptOut(db(), organization.id)).toBe(false);
+
+    const out = await accountsService.setTrainingOptOut(db(), {
+      orgId: organization.id,
+      actorUserId: owner.id,
+      optOut: true,
+    });
+    expect(out).toBe(true);
+    expect(await accountsService.getTrainingOptOut(db(), organization.id)).toBe(true);
+
+    await accountsService.setTrainingOptOut(db(), {
+      orgId: organization.id,
+      actorUserId: owner.id,
+      optOut: false,
+    });
+    expect(await accountsService.getTrainingOptOut(db(), organization.id)).toBe(false);
+  });
+
+  it('forbids a non-owner (VIEWER) from changing the setting', async () => {
+    const { organization, owner } = await seedOrg();
+    const viewer = await accountsService.inviteMember(db(), {
+      orgId: organization.id,
+      actorUserId: owner.id,
+      email: 'view@acme.test',
+      role: 'VIEWER',
+    });
+    await accountsService.acceptInvitation(db(), {
+      orgId: organization.id,
+      userId: viewer.user_id,
+    });
+
+    await expect(
+      accountsService.setTrainingOptOut(db(), {
+        orgId: organization.id,
+        actorUserId: viewer.user_id,
+        optOut: true,
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    // The flag is untouched by the rejected attempt.
+    expect(await accountsService.getTrainingOptOut(db(), organization.id)).toBe(false);
+  });
+
+  it('lists exactly the opted-out org ids for the offline export', async () => {
+    const a = await seedOrg();
+    const b = await accountsService.createOrganizationWithOwner(db(), {
+      name: 'Beta Builders',
+      slug: 'beta',
+      owner: { email: 'owner@beta.test', fullName: 'Bo Owner' },
+    });
+    await accountsService.setTrainingOptOut(db(), {
+      orgId: b.organization.id,
+      actorUserId: b.owner.id,
+      optOut: true,
+    });
+
+    const optedOut = await accountsService.listOptedOutOrgIds(db());
+    expect(optedOut).toEqual([b.organization.id]);
+    expect(optedOut).not.toContain(a.organization.id);
+  });
+});

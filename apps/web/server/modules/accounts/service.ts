@@ -197,4 +197,32 @@ export const accountsService = {
 
     await repo.softDeleteMembership(db, membership.id);
   },
+
+  /** Read this org's training-data preferences. Any member (`org:read`). */
+  async getTrainingOptOut(db: DB, orgId: string): Promise<boolean> {
+    const org = await repo.getOrganization(db, orgId);
+    if (!org) throw NotFound('Organization not found');
+    return org.training_opt_out;
+  },
+
+  /**
+   * Opt this org in/out of training use of its feedback (P4-05). Governance-level → requires
+   * `billing:manage` (OWNER). Only the flag flips here; the offline pipeline honors it at assembly.
+   */
+  async setTrainingOptOut(
+    db: DB,
+    input: { orgId: string; actorUserId: string; optOut: boolean },
+  ): Promise<boolean> {
+    await requireCapability(db, input.actorUserId, input.orgId, 'billing:manage');
+    const org = await repo.setTrainingOptOut(db, input.orgId, input.optOut);
+    return org.training_opt_out;
+  },
+
+  /**
+   * The org ids that opted out of training (P4-05) — the export the offline `ml` dataset-assembly
+   * pipeline consumes to exclude their data. Platform-wide read, off the request path.
+   */
+  listOptedOutOrgIds(db: DB): Promise<string[]> {
+    return repo.listOptedOutOrgIds(db);
+  },
 };
