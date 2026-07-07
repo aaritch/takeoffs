@@ -18,6 +18,21 @@ import { modelRunsRepo, type ModelRun } from './repository';
  */
 export const CURRENT_PIPELINE_VERSION = '0.0.0-skeleton';
 
+export type TerminalRunStatus = Extract<ModelRunStatus, 'SUCCEEDED' | 'PARTIAL' | 'FAILED'>;
+
+/**
+ * Aggregate per-sheet inference outcomes into the ModelRun's terminal status (P2-03): all sheets
+ * SUCCEEDED → SUCCEEDED; all FAILED → FAILED; any mix → **PARTIAL** (a stage failing on one sheet
+ * leaves the others' results intact — the run is partial, not dead). An empty set is FAILED (the run
+ * produced nothing). Pure so it's exhaustively testable; mirrors the Python `derive_run_status`.
+ */
+export function deriveRunStatus(sheetStatuses: ModelRunStatus[]): TerminalRunStatus {
+  if (sheetStatuses.length === 0) return 'FAILED';
+  if (sheetStatuses.every((s) => s === 'SUCCEEDED')) return 'SUCCEEDED';
+  if (sheetStatuses.every((s) => s === 'FAILED')) return 'FAILED';
+  return 'PARTIAL';
+}
+
 export interface StartModelRunInput {
   planSetId: string;
   trigger?: ModelRunTrigger;
@@ -105,6 +120,20 @@ export const aiRunsService = {
     });
     if (!run) throw NotFound('Model run not found');
     return run;
+  },
+
+  /**
+   * Finalize a run from the statuses of its sheets (P2-03): derive SUCCEEDED/PARTIAL/FAILED via
+   * {@link deriveRunStatus} and stamp it. The results-consumer calls this once every sheet's
+   * SheetInferenceResult has been ingested.
+   */
+  async finalizeFromSheets(
+    tx: OrgScopedTx,
+    runId: string,
+    sheetStatuses: ModelRunStatus[],
+    errorDetail?: string,
+  ): Promise<ModelRun> {
+    return aiRunsService.finalizeRun(tx, runId, deriveRunStatus(sheetStatuses), errorDetail);
   },
 
   getById(tx: OrgScopedTx, id: string): Promise<ModelRun | undefined> {
