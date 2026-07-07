@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { INFERENCE_QUEUE, StartModelRunRequest } from '@takeoff/contracts';
+import { getDb } from '@/server/data/client';
 import { getAppDb, withOrgScope } from '@/server/data/org-scope';
 import { CURRENT_PIPELINE_VERSION, aiRunsService, modelRunToView } from '@/server/modules/ai-runs';
+import { modelRegistryService } from '@/server/modules/model-registry';
 import { sheetsRepo } from '@/server/modules/ingestion';
 import { enqueue } from '@/server/platform/queue';
 import { apiHandler, parseBody } from '@/server/platform/api';
@@ -17,11 +19,16 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   const { id: planSetId } = await ctx.params;
   return apiHandler(request, async ({ orgId }) => {
     const body = await parseBody(request, StartModelRunRequest);
+    // Stamp the serving model versions (the ACTIVE row per family, P4-06) onto the run, so every run
+    // records exactly which versions produced it — the audit trail a rollback relies on. Resolved on
+    // the admin connection (platform-global registry) before the org-scoped run insert.
+    const modelVersions = await modelRegistryService.activeServingVersions(getDb());
     const { run, sheetIds } = await withOrgScope(getAppDb(), orgId, async (tx) => {
       const created = await aiRunsService.startRun(tx, {
         planSetId,
         ...(body.trigger ? { trigger: body.trigger } : {}),
         pipelineVersion: CURRENT_PIPELINE_VERSION,
+        modelVersions,
       });
       const sheets = await sheetsRepo.listByPlanSet(tx, planSetId);
       return { run: created, sheetIds: sheets.map((s) => s.id) };

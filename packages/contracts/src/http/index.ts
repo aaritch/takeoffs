@@ -23,3 +23,4 @@ export * from './sso';
 export * from './imports';
 export * from './dr';
 export * from './collaboration';
+export * from './model-registry';

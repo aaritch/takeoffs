@@ -13,6 +13,15 @@ export const ModelRunStatus = z.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED'
 export type ModelRunStatus = z.infer<typeof ModelRunStatus>;
 
 /**
+ * Model version lifecycle in the registry (spec §7.4, P4-06). CANDIDATE (evaluated, not serving) →
+ * ACTIVE (the served version, one per family) → RETIRED (superseded by a promotion) or ROLLED_BACK
+ * (reverted from active). Promotion requires non-regression against the frozen benchmark; rollback is
+ * a version switch, not a redeploy.
+ */
+export const ModelVersionStatus = z.enum(['CANDIDATE', 'ACTIVE', 'RETIRED', 'ROLLED_BACK']);
+export type ModelVersionStatus = z.infer<typeof ModelVersionStatus>;
+
+/**
  * A captured human correction of an AI candidate (spec §5.4, DetectionFeedback.action) —
  * the training signal for the flywheel (spec §7.6).
  * - ACCEPT / REJECT: confirm or discard a candidate.

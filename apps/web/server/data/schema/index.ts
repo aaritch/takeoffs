@@ -15,6 +15,7 @@ export * from './comments';
 export * from './quantity-rollups';
 export * from './reports';
 export * from './model-runs';
+export * from './model-versions';
 export * from './detection-feedback';
 export * from './orders';
 export * from './pricing-rules';
