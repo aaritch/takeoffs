@@ -50,7 +50,12 @@ app plane (Vercel)  --enqueue InferenceJob-->  Upstash Redis (jobs:inference)
 
 Until (2) or (3) is cleared the image can't be pushed and the Container App can't be deployed; until
 (1) is cleared it can only run **CPU** (fine for the no-op skeleton). None of this blocks the
-host-agnostic code (P2-02 worker skeleton is built + tested; P2-03 orchestration + P4-05/06 next).
+host-agnostic code (P2-02 worker skeleton is built + tested; P2-03 orchestration + P4-05/06 done).
+
+> **Operator setup steps** — the full step-by-step (auth → provision → clear these blockers → build →
+> deploy → verify → GPU swap → wire the results consumer) is the runbook
+> [`docs/runbooks/gpu-compute-home.md`](../../docs/runbooks/gpu-compute-home.md). This file is the
+> reference (architecture + resource names); that file is the checklist you follow.
 
 ## Deploy runbook (ready once a build path exists)
 
